@@ -1,4 +1,4 @@
 Flask
 python-dotenv
 requests
-psycopg2-binary
+mysql-connector-python

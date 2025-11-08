@@ -1,27 +1,53 @@
-version: '3.8'
+version: "3.8"
 
 services:
-  luis_ex_par_so_web:
+  proyecto_bases_mysql_db:
+    image: mysql:latest
+    container_name: proyecto_bases_mysql_db
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "3307:3306"   # opcional: para conectarte desde tu host
+    volumes:
+      - proyecto_bases_mysql_data:/var/lib/mysql
+      - ./Script_Intersemestral.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-p${MYSQL_PASSWORD}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    networks:
+      - backend
+    restart: unless-stopped
+
+  proyecto_bases_web:
     build: .
-    container_name: luis_ex_par_so_web
+    container_name: proyecto_bases_web
+    env_file:
+      - .env            # aquí debe vivir DB_HOST=proyecto_bases_mysql_db
+    environment:
+      FLASK_APP: app.py
+      FLASK_DEBUG: "1"
+      FLASK_ENV: development
+      PYTHONUNBUFFERED: "1"
+    command: flask run --host=0.0.0.0 --port=5000
     ports:
       - "5000:5000"
-    env_file:
-      - .env
     depends_on:
-      - luis_ex_par_so_db
-
-  luis_ex_par_so_db:
-    image: postgres:13
-    container_name: luis_ex_par_so_db
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    ports:
-      - "5432:5432"
+      proyecto_bases_mysql_db:
+        condition: service_healthy
     volumes:
-      - luis_ex_par_so_postgres_data:/var/lib/postgresql/data
+      - .:/app          # <-- monta tu código: recarga al guardar
+    networks:
+      - backend
+    restart: unless-stopped
 
 volumes:
-  luis_ex_par_so_postgres_data:
+  proyecto_bases_mysql_data:
+
+networks:
+  backend:
