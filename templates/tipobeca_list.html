@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block title %}Tipos de Beca{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Tipos de Beca</h1>
+    <a href="{{ url_for('add_tipobeca') }}" class="btn btn-primary">Añadir Tipo</a>
+</div>
+
+<form action="{{ url_for('search_tipobeca') }}" method="get" class="mb-4">
+    <div class="input-group">
+        <input type="text" class="form-control" name="query"
+               placeholder="Buscar por nombre o ID...">
+        <button class="btn btn-outline-secondary" type="submit">Buscar</button>
+    </div>
+</form>
+
+<div class="card">
+    <div class="card-header">Lista de Tipos de Beca</div>
+    <div class="card-body">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre del Tipo</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in tipos %}
+                <tr>
+                    <td>{{ t.idtipo_beca }}</td>
+                    <td>{{ t.nombre_tipo }}</td>
+                    <td>
+                        <a class="btn btn-sm btn-warning"
+                           href="{{ url_for('edit_tipobeca', idtipo=t.idtipo_beca) }}">
+                            Editar
+                        </a>
+                        <form action="{{ url_for('delete_tipobeca', idtipo=t.idtipo_beca) }}"
+                              method="post" style="display:inline;">
+                            <button class="btn btn-sm btn-danger"
+                                    onclick="return confirm('¿Eliminar este tipo?');">
+                                Eliminar
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="3" class="text-center">No hay tipos de beca registrados.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

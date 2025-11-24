@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ 'Editar' if asignatura else 'Añadir' }} Asignatura{% endblock %}
+
+{% block content %}
+<h1>{{ 'Editar' if asignatura else 'Añadir' }} Asignatura</h1>
+<hr>
+
+<form method="post">
+
+    {% if not asignatura %}
+    <div class="mb-3">
+        <label for="idasignatura" class="form-label">ID de la Asignatura</label>
+        <input type="number" class="form-control" id="idasignatura"
+               name="idasignatura" required>
+    </div>
+    {% endif %}
+
+    <div class="mb-3">
+        <label for="nombre_asignatura" class="form-label">Nombre de la Asignatura</label>
+        <input type="text" class="form-control" id="nombre_asignatura"
+               name="nombre_asignatura"
+               value="{{ asignatura.nombre_asignatura if asignatura else '' }}"
+               required>
+    </div>
+
+    <div class="mb-3">
+        <label for="creditos_asignatura" class="form-label">Créditos</label>
+        <input type="number" class="form-control" id="creditos_asignatura"
+               name="creditos_asignatura"
+               value="{{ asignatura.creditos_asignatura if asignatura else '' }}"
+               required>
+    </div>
+
+    <div class="mb-3">
+        <label for="horas_por_sesion" class="form-label">Horas por sesión</label>
+        <input type="number" step="0.25" class="form-control" id="horas_por_sesion"
+               name="horas_por_sesion"
+               value="{{ asignatura.horas_por_sesion if asignatura else '' }}">
+    </div>
+
+    <button type="submit" class="btn btn-primary">
+        {{ 'Actualizar' if asignatura else 'Guardar' }}
+    </button>
+    <a href="{{ url_for('list_asignaturas') }}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}
+

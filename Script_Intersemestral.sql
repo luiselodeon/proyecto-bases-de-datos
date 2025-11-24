@@ -107,6 +107,16 @@ COMMENT = 'Catalogo de BECAS, estatus Activo, Baja, Congelada';
 
 
 -- -----------------------------------------------------
+-- Table `controlescolar_db`.`tipo_beca`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS tipo_beca (
+  idtipo_beca INT NOT NULL,
+  nombre_tipo VARCHAR(50) NOT NULL,
+  PRIMARY KEY (idtipo_beca))
+  ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
 -- Table `controlescolar_db`.`inscripcion`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `controlescolar_db`.`inscripcion` (
@@ -153,7 +163,7 @@ ENGINE = InnoDB;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `controlescolar_db`.`departamentoacademico` (
   `iddepartamentoacademico` INT(8) NOT NULL,
-  `descrpcipcion_depto` VARCHAR(45) NULL,
+  `nombre_departamento` VARCHAR(45) NULL,
   PRIMARY KEY (`iddepartamentoacademico`))
 ENGINE = InnoDB;
 
@@ -193,12 +203,12 @@ CREATE TABLE IF NOT EXISTS `controlescolar_db`.`inscripcionxcarrera` (
     REFERENCES `controlescolar_db`.`inscripcion` (`idinscripcion`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
-  CONSTRAINT `fk_idcarrera`
+  CONSTRAINT `fk_inscripcionxcarrera_carrera`   -- 👈 NOMBRE NUEVO
     FOREIGN KEY (`idcarrera`)
     REFERENCES `controlescolar_db`.`carrera` (`idcarrera`)
     ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
+    ON UPDATE NO ACTION
+) ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
@@ -206,7 +216,7 @@ ENGINE = InnoDB;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `controlescolar_db`.`asignatura` (
   `idasignatura` INT(8) NOT NULL,
-  `descripcion_asignatura` VARCHAR(45) NULL,
+  `nombre_asignatura` VARCHAR(45) NULL,
   `creditos_asignatura` INT(6) NOT NULL COMMENT 'Creditos asignados a la asignatura',
   `horas_por_sesion` DECIMAL(4,2) NULL,
   PRIMARY KEY (`idasignatura`))

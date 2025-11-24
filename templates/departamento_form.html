@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ 'Editar' if departamento else 'Añadir' }} Departamento{% endblock %}
+
+{% block content %}
+<h1>{{ 'Editar' if departamento else 'Añadir' }} Departamento Académico</h1>
+<hr>
+
+<form method="post">
+
+    {% if not departamento %}
+    <div class="mb-3">
+        <label class="form-label">ID del Departamento</label>
+        <input type="number" class="form-control" name="iddepartamentoacademico" required>
+    </div>
+    {% endif %}
+
+    <div class="mb-3">
+        <label class="form-label">Nombre del Departamento</label>
+        <input type="text" class="form-control" name="nombre_departamento"
+               value="{{ departamento.nombre_departamento if departamento else '' }}"
+               required>
+    </div>
+
+    <button type="submit" class="btn btn-primary">
+        {{ 'Actualizar' if departamento else 'Guardar' }}
+    </button>
+    <a href="{{ url_for('list_departamentos') }}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}

@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   proyecto_bases_mysql_db:
-    image: mysql:latest
+    image: mysql:8.0
     container_name: proyecto_bases_mysql_db
     environment:
       MYSQL_DATABASE: ${MYSQL_DATABASE}
@@ -10,10 +10,12 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
     ports:
-      - "3307:3306"   # opcional: para conectarte desde tu host
+      - "3506:3306"   # opcional: para conectarte desde tu host
     volumes:
       - proyecto_bases_mysql_data:/var/lib/mysql
       - ./Script_Intersemestral.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    tmpfs:
+      - /var/run/mysqld 
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-p${MYSQL_PASSWORD}"]
       interval: 5s
@@ -36,7 +38,7 @@ services:
       PYTHONUNBUFFERED: "1"
     command: flask run --host=0.0.0.0 --port=5000
     ports:
-      - "5000:5000"
+      - "5002:5000"
     depends_on:
       proyecto_bases_mysql_db:
         condition: service_healthy

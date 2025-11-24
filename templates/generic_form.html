@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">{{ titulo }}</h1>
+
+<form method="post">
+    {% for field in fields %}
+        {% set value = record[field.name] if record and field.name in record else '' %}
+        <div class="mb-3">
+            <label for="{{ field.name }}" class="form-label">{{ field.label }}</label>
+            <input
+                type="{{ field.type }}"
+                class="form-control"
+                id="{{ field.name }}"
+                name="{{ field.name }}"
+                value="{{ value }}"
+                {% if field.required %}required{% endif %}
+                {% if field.readonly %}readonly{% endif %}
+            >
+        </div>
+    {% endfor %}
+
+    <button type="submit" class="btn btn-primary">Guardar</button>
+    <a href="{{ cancel_url }}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}
