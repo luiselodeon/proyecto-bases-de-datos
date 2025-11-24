@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 
 {% block title %}Añadir Asignatura por Carrera{% endblock %}
 
@@ -8,10 +8,10 @@
 
 <form method="post">
 
-    <!-- CARRERAS -->
+    <!-- Carrera -->
     <div class="mb-3">
-        <label class="form-label">Carrera</label>
-        <select name="idcarrera" class="form-select" required>
+        <label for="idcarrera" class="form-label">Carrera</label>
+        <select class="form-select" id="idcarrera" name="idcarrera" required>
             <option value="">Seleccione una carrera...</option>
             {% for c in carreras %}
             <option value="{{ c.idcarrera }}">
@@ -21,10 +21,10 @@
         </select>
     </div>
 
-    <!-- ASIGNATURAS -->
+    <!-- Asignatura -->
     <div class="mb-3">
-        <label class="form-label">Asignatura</label>
-        <select name="idasignatura" class="form-select" required>
+        <label for="idasignatura" class="form-label">Asignatura</label>
+        <select class="form-select" id="idasignatura" name="idasignatura" required>
             <option value="">Seleccione una asignatura...</option>
             {% for a in asignaturas %}
             <option value="{{ a.idasignatura }}">
@@ -34,22 +34,10 @@
         </select>
     </div>
 
-    <!-- DEPARTAMENTO ACADÉMICO -->
-    <div class="mb-3">
-        <label class="form-label">Departamento Académico</label>
-        <select name="iddepartamentoacademico" class="form-select" required>
-            <option value="">Seleccione un departamento...</option>
-            {% for d in departamentos %}
-            <option value="{{ d.iddepartamentoacademico }}">
-                {{ d.iddepartamentoacademico }} - {{ d.nombre_departamento }}
-            </option>
-            {% endfor %}
-        </select>
-    </div>
-
-    <button class="btn btn-primary" type="submit">Guardar</button>
-    <a class="btn btn-secondary" href="{{ url_for('list_asignaturaxcarrera') }}">Cancelar</a>
-
+    <button type="submit" class="btn btn-primary">
+        Guardar
+    </button>
+    <a href="{{ url_for('list_asignaturaxcarrera') }}" class="btn btn-secondary">Cancelar</a>
 </form>
 
 {% endblock %}

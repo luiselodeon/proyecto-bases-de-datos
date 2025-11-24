@@ -169,6 +169,17 @@ ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
+-- Table `controlescolar_db`.`departamentoasignatura`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `controlescolar_db`.`departamentoasignatura` (
+  `iddeptoasignatura` INT(8) NOT NULL,
+  `nombre_deptoasignatura` VARCHAR(100) NULL,
+  PRIMARY KEY (`iddeptoasignatura`)
+) ENGINE=InnoDB;
+
+
+
+-- -----------------------------------------------------
 -- Table `controlescolar_db`.`carrera`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `controlescolar_db`.`carrera` (
@@ -185,6 +196,21 @@ CREATE TABLE IF NOT EXISTS `controlescolar_db`.`carrera` (
     ON DELETE RESTRICT
     ON UPDATE RESTRICT)
 ENGINE = InnoDB;
+
+-- -----------------------------------------------------
+-- Table `controlescolar_db`.`asignaturaxcarrera`
+-- -----------------------------------------------------
+CREATE TABLE asignaturaxcarrera (
+  idcarrera INT(8) NOT NULL,
+  idasignatura INT(8) NOT NULL,
+  PRIMARY KEY (idcarrera, idasignatura),
+  CONSTRAINT fk_idcarrera
+    FOREIGN KEY (idcarrera)
+    REFERENCES carrera (idcarrera),
+  CONSTRAINT fk_idasignatura
+    FOREIGN KEY (idasignatura)
+    REFERENCES asignatura (idasignatura)
+) ENGINE=InnoDB;
 
 
 -- -----------------------------------------------------
@@ -214,36 +240,28 @@ CREATE TABLE IF NOT EXISTS `controlescolar_db`.`inscripcionxcarrera` (
 -- -----------------------------------------------------
 -- Table `controlescolar_db`.`asignatura`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `controlescolar_db`.`asignatura` (
-  `idasignatura` INT(8) NOT NULL,
-  `nombre_asignatura` VARCHAR(45) NULL,
-  `creditos_asignatura` INT(6) NOT NULL COMMENT 'Creditos asignados a la asignatura',
-  `horas_por_sesion` DECIMAL(4,2) NULL,
-  PRIMARY KEY (`idasignatura`))
-ENGINE = InnoDB;
+CREATE TABLE IF NOT EXISTS asignatura (
+  idasignatura INT(8) NOT NULL,
+  nombre_asignatura VARCHAR(45) NULL,
+  creditos_asignatura INT(6) NOT NULL,
+  horas_por_sesion DECIMAL(4,2) NULL,
 
+  -- Nuevo: departamento de la asignatura (FK)
+  iddeptoasignatura INT(8) NULL,
 
--- -----------------------------------------------------
--- Table `controlescolar_db`.`asignaturaxcarrera`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `controlescolar_db`.`asignaturaxcarrera` (
-  `idcarrera` INT(8) NOT NULL COMMENT 'fk identificador de carrera ',
-  `idasignatura` INT(8) NOT NULL COMMENT 'identificador de asignatura',
-  `departamento_academico` INT(4) NULL,
-  PRIMARY KEY (`idcarrera`, `idasignatura`),
-  UNIQUE INDEX `idcarrera_UNIQUE` (`idcarrera` ASC) VISIBLE,
-  UNIQUE INDEX `idasignatura_UNIQUE` (`idasignatura` ASC) VISIBLE,
-  CONSTRAINT `fk_idcarrera`
-    FOREIGN KEY (`idcarrera`)
-    REFERENCES `controlescolar_db`.`carrera` (`idcarrera`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_idasignatura`
-    FOREIGN KEY (`idasignatura`)
-    REFERENCES `controlescolar_db`.`asignatura` (`idasignatura`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
+  -- Nuevo: clave generada (ej: MATE-101)
+  clave_asignatura VARCHAR(20) NULL,
+
+  PRIMARY KEY (idasignatura),
+
+  -- Relación con departamentoasignatura
+  CONSTRAINT fk_asig_depto
+    FOREIGN KEY (iddeptoasignatura)
+    REFERENCES departamentoasignatura(iddeptoasignatura)
+    ON UPDATE NO ACTION
+    ON DELETE SET NULL
+) ENGINE = InnoDB;
+
 
 
 -- -----------------------------------------------------

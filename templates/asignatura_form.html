@@ -8,6 +8,7 @@
 
 <form method="post">
 
+    {# ID solo cuando es nueva #}
     {% if not asignatura %}
     <div class="mb-3">
         <label for="idasignatura" class="form-label">ID de la Asignatura</label>
@@ -38,6 +39,30 @@
                name="horas_por_sesion"
                value="{{ asignatura.horas_por_sesion if asignatura else '' }}">
     </div>
+
+    <div class="mb-3">
+        <label for="iddeptoasignatura" class="form-label">Departamento de la asignatura</label>
+        <select class="form-select" id="iddeptoasignatura" name="iddeptoasignatura">
+            <option value="">Sin departamento</option>
+            {% for d in departamentos %}
+            <option value="{{ d.iddeptoasignatura }}"
+                {% if asignatura and asignatura.iddeptoasignatura == d.iddeptoasignatura %}selected{% endif %}>
+                {{ d.iddeptoasignatura }} - {{ d.nombre_deptoasignatura }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    {% if asignatura and asignatura.clave_asignatura %}
+    <div class="mb-3">
+        <label class="form-label">Clave generada</label>
+        <input type="text" class="form-control"
+               value="{{ asignatura.clave_asignatura }}" disabled>
+        <div class="form-text">
+            La clave se genera automáticamente a partir del departamento y el ID de la asignatura.
+        </div>
+    </div>
+    {% endif %}
 
     <button type="submit" class="btn btn-primary">
         {{ 'Actualizar' if asignatura else 'Guardar' }}

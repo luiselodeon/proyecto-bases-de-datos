@@ -414,33 +414,34 @@ def search_carreras():
 # ---------------------------
 # CRUD Asignatura x Carrera
 # ---------------------------
+# ---------------------------
+# CRUD Asignatura x Carrera
+# ---------------------------
 
 @app.route("/asignaturaxcarrera")
 def list_asignaturaxcarrera():
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
+    if conn is None:
+        return render_template("asignaturaxcarrera_list.html", relaciones=[])
 
+    cursor = conn.cursor(dictionary=True)
     cursor.execute("""
         SELECT axc.idcarrera,
                c.descripcion_carrera,
                axc.idasignatura,
-               a.nombre_asignatura,
-               axc.departamento_academico,
-               d.nombre_departamento
+               a.nombre_asignatura
         FROM asignaturaxcarrera axc
         JOIN carrera c
           ON axc.idcarrera = c.idcarrera
         JOIN asignatura a
           ON axc.idasignatura = a.idasignatura
-        LEFT JOIN departamentoacademico d
-          ON axc.departamento_academico = d.iddepartamentoacademico
-        ORDER BY axc.idcarrera, axc.idasignatura;
+        ORDER BY c.descripcion_carrera, a.nombre_asignatura;
     """)
-    registros = cursor.fetchall()
+    relaciones = cursor.fetchall()
     cursor.close()
     conn.close()
 
-    return render_template("asignaturaxcarrera_list.html", registros=registros)
+    return render_template("asignaturaxcarrera_list.html", relaciones=relaciones)
 
 
 @app.route("/asignaturaxcarrera/add", methods=["GET", "POST"])
@@ -452,7 +453,7 @@ def add_asignaturaxcarrera():
 
     cursor = conn.cursor(dictionary=True)
 
-    # 🔹 Estos SELECT llenan los menús desplegables
+    # Catálogos para los SELECT
     cursor.execute("""
         SELECT idcarrera, descripcion_carrera
         FROM carrera
@@ -467,30 +468,16 @@ def add_asignaturaxcarrera():
     """)
     asignaturas = cursor.fetchall()
 
-    cursor.execute("""
-        SELECT iddepartamentoacademico, nombre_departamento
-        FROM departamentoacademico
-        ORDER BY iddepartamentoacademico;
-    """)
-    departamentos = cursor.fetchall()
-
-    # 👀 Debug rápido (revisa en la consola del servidor Flask)
-    print("DEBUG AXC -> carreras:", len(carreras),
-          "asignaturas:", len(asignaturas),
-          "departamentos:", len(departamentos))
-
     if request.method == "POST":
         idcarrera = request.form.get("idcarrera")
         idasignatura = request.form.get("idasignatura")
-        iddepto = request.form.get("iddepartamentoacademico")  # puede venir vacío
 
         try:
             cursor2 = conn.cursor()
             cursor2.execute("""
-                INSERT INTO asignaturaxcarrera
-                    (idcarrera, idasignatura, departamento_academico)
-                VALUES (%s, %s, %s)
-            """, (idcarrera, idasignatura, iddepto if iddepto else None))
+                INSERT INTO asignaturaxcarrera (idcarrera, idasignatura)
+                VALUES (%s, %s)
+            """, (idcarrera, idasignatura))
             conn.commit()
             cursor2.close()
             flash("Asignatura asociada a la carrera correctamente.", "success")
@@ -506,70 +493,17 @@ def add_asignaturaxcarrera():
         "asignaturaxcarrera_form.html",
         carreras=carreras,
         asignaturas=asignaturas,
-        departamentos=departamentos,
-        relacion=None   # 👈 importante: el template usa 'relacion'
+        relacion=None
     )
-@app.route("/asignaturaxcarrera/edit/<int:idcarrera>/<int:idasignatura>", methods=["GET", "POST"])
-def edit_asignaturaxcarrera(idcarrera, idasignatura):
+
+
+@app.route("/asignaturaxcarrera/delete/<int:idcarrera>/<int:idasignatura>", methods=["POST"])
+def delete_asignaturaxcarrera(idcarrera, idasignatura):
     conn = get_db_connection()
     if conn is None:
         return redirect(url_for("list_asignaturaxcarrera"))
 
-    cursor = conn.cursor(dictionary=True)
-
-    # Obtener la relación actual
-    cursor.execute("""
-        SELECT idcarrera, idasignatura, departamento_academico
-        FROM asignaturaxcarrera
-        WHERE idcarrera = %s AND idasignatura = %s;
-    """, (idcarrera, idasignatura))
-    relacion = cursor.fetchone()
-
-    if not relacion:
-        flash("Relación no encontrada.", "warning")
-        return redirect(url_for("list_asignaturaxcarrera"))
-
-    # Catálogos
-    cursor.execute("SELECT idcarrera, descripcion_carrera FROM carrera ORDER BY idcarrera;")
-    carreras = cursor.fetchall()
-
-    cursor.execute("SELECT idasignatura, nombre_asignatura FROM asignatura ORDER BY idasignatura;")
-    asignaturas = cursor.fetchall()
-
-    cursor.execute("SELECT iddepartamentoacademico, nombre_departamento FROM departamentoacademico;")
-    departamentos = cursor.fetchall()
-
-    if request.method == "POST":
-        nuevo_depto = request.form.get("departamento_academico") or None
-
-        try:
-            cursor.execute("""
-                UPDATE asignaturaxcarrera
-                SET departamento_academico = %s
-                WHERE idcarrera = %s AND idasignatura = %s
-            """, (nuevo_depto, idcarrera, idasignatura))
-            conn.commit()
-            flash("Relación actualizada correctamente.", "success")
-            return redirect(url_for("list_asignaturaxcarrera"))
-        except mysql.connector.Error as err:
-            conn.rollback()
-            flash(f"Error al actualizar: {err}", "danger")
-
-    cursor.close()
-    conn.close()
-
-    return render_template(
-        "asignaturaxcarrera_form.html",
-        relacion=relacion,
-        carreras=carreras,
-        asignaturas=asignaturas,
-        departamentos=departamentos
-    )
-@app.route("/asignaturaxcarrera/delete/<int:idcarrera>/<int:idasignatura>", methods=["POST"])
-def delete_asignaturaxcarrera(idcarrera, idasignatura):
-    conn = get_db_connection()
     cursor = conn.cursor()
-
     try:
         cursor.execute("""
             DELETE FROM asignaturaxcarrera
@@ -584,51 +518,44 @@ def delete_asignaturaxcarrera(idcarrera, idasignatura):
     cursor.close()
     conn.close()
     return redirect(url_for("list_asignaturaxcarrera"))
+
+
 @app.route("/asignaturaxcarrera/search")
 def search_asignaturaxcarrera():
-    """Busca relaciones asignatura–carrera por carrera, asignatura o departamento."""
-    term = request.args.get("query", "").strip()
-    if not term:
+    query_term = request.args.get("query", "").strip()
+    if not query_term:
         return redirect(url_for("list_asignaturaxcarrera"))
 
     conn = get_db_connection()
     if conn is None:
-        flash("No se pudo conectar a la base de datos.", "danger")
         return redirect(url_for("list_asignaturaxcarrera"))
 
     cursor = conn.cursor(dictionary=True)
-    pattern = f"%{term}%"
+    pattern = f"%{query_term}%"
 
     cursor.execute("""
         SELECT axc.idcarrera,
                c.descripcion_carrera,
                axc.idasignatura,
-               a.nombre_asignatura,
-               axc.departamento_academico,
-               d.nombre_departamento
+               a.nombre_asignatura
         FROM asignaturaxcarrera axc
         JOIN carrera c
           ON axc.idcarrera = c.idcarrera
         JOIN asignatura a
           ON axc.idasignatura = a.idasignatura
-        LEFT JOIN departamentoacademico d
-          ON axc.departamento_academico = d.iddepartamentoacademico
         WHERE c.descripcion_carrera LIKE %s
            OR a.nombre_asignatura LIKE %s
-           OR d.nombre_departamento LIKE %s
-           OR CAST(axc.idcarrera AS CHAR) LIKE %s
-           OR CAST(axc.idasignatura AS CHAR) LIKE %s
-        ORDER BY axc.idcarrera, axc.idasignatura;
-    """, (pattern, pattern, pattern, pattern, pattern))
+           OR axc.idcarrera LIKE %s
+           OR axc.idasignatura LIKE %s
+        ORDER BY c.descripcion_carrera, a.nombre_asignatura;
+    """, (pattern, pattern, pattern, pattern))
 
-    registros = cursor.fetchall()
+    relaciones = cursor.fetchall()
     cursor.close()
     conn.close()
 
-    flash(f'Resultados para "{term}".', "info")
-    # 👇 usamos la misma vista y el mismo nombre de variable que list_asignaturaxcarrera
-    return render_template("asignaturaxcarrera_list.html", registros=registros)
-
+    flash(f'Mostrando resultados para "{query_term}".', "info")
+    return render_template("asignaturaxcarrera_list.html", relaciones=relaciones)
 
 
 
@@ -765,6 +692,9 @@ def search_departamentos():
 # ---------------------------
 # CRUD Asignatura
 # ---------------------------
+# ---------------------------
+# CRUD Asignatura
+# ---------------------------
 
 @app.route("/asignaturas")
 def list_asignaturas():
@@ -774,9 +704,17 @@ def list_asignaturas():
 
     cursor = conn.cursor(dictionary=True)
     cursor.execute("""
-        SELECT idasignatura, nombre_asignatura, creditos_asignatura, horas_por_sesion
-        FROM asignatura
-        ORDER BY idasignatura;
+        SELECT a.idasignatura,
+               a.nombre_asignatura,
+               a.creditos_asignatura,
+               a.horas_por_sesion,
+               a.clave_asignatura,
+               a.iddeptoasignatura,
+               da.nombre_deptoasignatura
+        FROM asignatura a
+        LEFT JOIN departamentoasignatura da
+               ON a.iddeptoasignatura = da.iddeptoasignatura
+        ORDER BY a.idasignatura;
     """)
     asignaturas = cursor.fetchall()
     cursor.close()
@@ -788,38 +726,62 @@ def list_asignaturas():
 @app.route("/asignaturas/add", methods=["GET", "POST"])
 def add_asignatura():
     conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_asignaturas"))
+
     cursor = conn.cursor(dictionary=True)
 
-    # Cargar departamentos para select
-    cursor.execute("SELECT * FROM departamentoacademico ORDER BY iddepartamentoacademico;")
+    # Cargar departamentos de asignatura para el select
+    cursor.execute("""
+        SELECT iddeptoasignatura, nombre_deptoasignatura
+        FROM departamentoasignatura
+        ORDER BY iddeptoasignatura;
+    """)
     departamentos = cursor.fetchall()
-
 
     if request.method == "POST":
         idasignatura = request.form["idasignatura"]
         nombre = request.form["nombre_asignatura"]
         creditos = request.form["creditos_asignatura"]
         horas = request.form.get("horas_por_sesion") or None
+        iddepto = request.form.get("iddeptoasignatura") or None
 
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        try:
+        # Generar clave_asignatura
+        prefijo = "DEPT"
+        if iddepto:
             cursor.execute("""
+                SELECT nombre_deptoasignatura
+                FROM departamentoasignatura
+                WHERE iddeptoasignatura = %s
+            """, (iddepto,))
+            row = cursor.fetchone()
+            if row and row["nombre_deptoasignatura"]:
+                prefijo = row["nombre_deptoasignatura"][:4].upper()
+
+        codigo = str(idasignatura)[:3]
+        clave = f"{prefijo}{codigo}"
+
+        try:
+            cursor2 = conn.cursor()
+            cursor2.execute("""
                 INSERT INTO asignatura
-                (idasignatura, nombre_asignatura, creditos_asignatura, horas_por_sesion)
-                VALUES (%s, %s, %s, %s)
-            """, (idasignatura, nombre, creditos, horas))
+                    (idasignatura, nombre_asignatura, creditos_asignatura,
+                     horas_por_sesion, iddeptoasignatura, clave_asignatura)
+                VALUES (%s, %s, %s, %s, %s, %s)
+            """, (idasignatura, nombre, creditos, horas, iddepto, clave))
             conn.commit()
+            cursor2.close()
             flash("Asignatura añadida correctamente.", "success")
             return redirect(url_for("list_asignaturas"))
         except mysql.connector.Error as err:
             conn.rollback()
             flash(f"Error al añadir asignatura: {err}", "danger")
-        finally:
-            cursor.close()
-            conn.close()
 
-    return render_template("asignatura_form.html", asignatura=None)
+    cursor.close()
+    conn.close()
+    return render_template("asignatura_form.html",
+                           asignatura=None,
+                           departamentos=departamentos)
 
 
 @app.route("/asignaturas/edit/<int:idasignatura>", methods=["GET", "POST"])
@@ -830,11 +792,16 @@ def edit_asignatura(idasignatura):
 
     cursor = conn.cursor(dictionary=True)
 
-    # traer asignatura
+    # Traer asignatura
     cursor.execute("""
-        SELECT idasignatura, nombre_asignatura, creditos_asignatura, horas_por_sesion
-        FROM asignatura
-        WHERE idasignatura = %s;
+        SELECT a.idasignatura,
+               a.nombre_asignatura,
+               a.creditos_asignatura,
+               a.horas_por_sesion,
+               a.iddeptoasignatura,
+               a.clave_asignatura
+        FROM asignatura a
+        WHERE a.idasignatura = %s;
     """, (idasignatura,))
     asignatura = cursor.fetchone()
 
@@ -844,20 +811,46 @@ def edit_asignatura(idasignatura):
         flash("Asignatura no encontrada.", "warning")
         return redirect(url_for("list_asignaturas"))
 
+    # Cargar departamentos
+    cursor.execute("""
+        SELECT iddeptoasignatura, nombre_deptoasignatura
+        FROM departamentoasignatura
+        ORDER BY iddeptoasignatura;
+    """)
+    departamentos = cursor.fetchall()
+
     if request.method == "POST":
         nombre = request.form["nombre_asignatura"]
         creditos = request.form["creditos_asignatura"]
         horas = request.form.get("horas_por_sesion") or None
+        iddepto = request.form.get("iddeptoasignatura") or None
+
+        # Recalcular clave por si cambió el departamento
+        prefijo = "DEPT"
+        if iddepto:
+            cursor.execute("""
+                SELECT nombre_deptoasignatura
+                FROM departamentoasignatura
+                WHERE iddeptoasignatura = %s
+            """, (iddepto,))
+            row = cursor.fetchone()
+            if row and row["nombre_deptoasignatura"]:
+                prefijo = row["nombre_deptoasignatura"][:4].upper()
+
+        codigo = str(idasignatura)[:3]
+        clave = f"{prefijo}{codigo}"
 
         try:
             cursor2 = conn.cursor()
             cursor2.execute("""
                 UPDATE asignatura
-                SET nombre_asignatura = %s,
+                SET nombre_asignatura   = %s,
                     creditos_asignatura = %s,
-                    horas_por_sesion = %s
+                    horas_por_sesion    = %s,
+                    iddeptoasignatura   = %s,
+                    clave_asignatura    = %s
                 WHERE idasignatura = %s
-            """, (nombre, creditos, horas, idasignatura))
+            """, (nombre, creditos, horas, iddepto, clave, idasignatura))
             conn.commit()
             cursor2.close()
             flash("Asignatura actualizada correctamente.", "success")
@@ -868,7 +861,9 @@ def edit_asignatura(idasignatura):
 
     cursor.close()
     conn.close()
-    return render_template("asignatura_form.html", asignatura=asignatura)
+    return render_template("asignatura_form.html",
+                           asignatura=asignatura,
+                           departamentos=departamentos)
 
 
 @app.route("/asignaturas/delete/<int:idasignatura>", methods=["POST"])
@@ -879,7 +874,10 @@ def delete_asignatura(idasignatura):
 
     cursor = conn.cursor()
     try:
-        cursor.execute("DELETE FROM asignatura WHERE idasignatura = %s;", (idasignatura,))
+        cursor.execute(
+            "DELETE FROM asignatura WHERE idasignatura = %s;",
+            (idasignatura,)
+        )
         conn.commit()
         flash("Asignatura eliminada correctamente.", "success")
     except mysql.connector.Error as err:
@@ -891,33 +889,6 @@ def delete_asignatura(idasignatura):
 
     return redirect(url_for("list_asignaturas"))
 
-@app.route("/asignaturas/search")
-def search_asignaturas():
-    query_term = request.args.get("query", "")
-    if not query_term:
-        return redirect(url_for("list_asignaturas"))
-
-    conn = get_db_connection()
-    if conn is None:
-        return redirect(url_for("list_asignaturas"))
-
-    cursor = conn.cursor(dictionary=True)
-    like = f"%{query_term}%"
-
-    cursor.execute("""
-        SELECT idasignatura, nombre_asignatura, creditos_asignatura, horas_por_sesion
-        FROM asignatura
-        WHERE nombre_asignatura LIKE %s
-           OR idasignatura LIKE %s
-        ORDER BY idasignatura;
-    """, (like, like))
-
-    asignaturas = cursor.fetchall()
-    cursor.close()
-    conn.close()
-
-    flash(f'Mostrando resultados para "{query_term}".', "info")
-    return render_template("asignatura_list.html", asignaturas=asignaturas)
 
 # ---------------------------
 # CRUD Tipo de Beca
@@ -1234,6 +1205,140 @@ def search_becas():
     flash(f'Mostrando resultados para "{query_term}".', "info")
     return render_template("beca_list.html", becas=becas)
 
+# ---------------------------
+# CRUD Departamento de Asignatura
+# ---------------------------
+
+@app.route("/departamentos_asignatura")
+def list_departamentos_asignatura():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("""
+        SELECT iddeptoasignatura, nombre_deptoasignatura
+        FROM departamentoasignatura
+        ORDER BY iddeptoasignatura;
+    """)
+    departamentos = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+    return render_template("departamentoasignatura_list.html", departamentos=departamentos)
+
+
+@app.route("/departamentos_asignatura/add", methods=["GET", "POST"])
+def add_departamento_asignatura():
+    if request.method == "POST":
+        iddep = request.form["iddeptoasignatura"]
+        nombre = request.form["nombre_deptoasignatura"]
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute("""
+                INSERT INTO departamentoasignatura
+                (iddeptoasignatura, nombre_deptoasignatura)
+                VALUES (%s, %s)
+            """, (iddep, nombre))
+
+            conn.commit()
+            flash("Departamento de asignatura añadido correctamente.", "success")
+            return redirect(url_for("list_departamentos_asignatura"))
+        except mysql.connector.Error as err:
+            conn.rollback()
+            flash(f"Error al añadir: {err}", "danger")
+
+        cursor.close()
+        conn.close()
+
+    return render_template("departamentoasignatura_form.html", departamento=None)
+
+
+@app.route("/departamentos_asignatura/edit/<int:iddep>", methods=["GET", "POST"])
+def edit_departamento_asignatura(iddep):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("""
+        SELECT *
+        FROM departamentoasignatura
+        WHERE iddeptoasignatura = %s;
+    """, (iddep,))
+    departamento = cursor.fetchone()
+
+    if not departamento:
+        flash("Departamento no encontrado.", "warning")
+        return redirect(url_for("list_departamentos_asignatura"))
+
+    if request.method == "POST":
+        nombre = request.form["nombre_deptoasignatura"]
+
+        try:
+            cursor2 = conn.cursor()
+            cursor2.execute("""
+                UPDATE departamentoasignatura
+                SET nombre_deptoasignatura = %s
+                WHERE iddeptoasignatura = %s
+            """, (nombre, iddep))
+            conn.commit()
+            flash("Departamento de asignatura actualizado correctamente.", "success")
+            return redirect(url_for("list_departamentos_asignatura"))
+        except mysql.connector.Error as err:
+            conn.rollback()
+            flash(f"Error al actualizar: {err}", "danger")
+
+    cursor.close()
+    conn.close()
+    return render_template("departamentoasignatura_form.html", departamento=departamento)
+
+
+@app.route("/departamentos_asignatura/delete/<int:iddep>", methods=["POST"])
+def delete_departamento_asignatura(iddep):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("""
+            DELETE FROM departamentoasignatura
+            WHERE iddeptoasignatura = %s
+        """, (iddep,))
+        conn.commit()
+        flash("Departamento de asignatura eliminado.", "success")
+    except mysql.connector.Error as err:
+        conn.rollback()
+        flash(f"No se pudo eliminar: {err}", "danger")
+
+    cursor.close()
+    conn.close()
+    return redirect(url_for("list_departamentos_asignatura"))
+
+
+# ---------------------------
+# BUSCAR DEPARTAMENTO
+# ---------------------------
+
+@app.route("/departamentos_asignatura/search")
+def search_departamentos_asignatura():
+    term = request.args.get("query", "")
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("""
+        SELECT *
+        FROM departamentoasignatura
+        WHERE nombre_deptoasignatura LIKE %s
+           OR iddeptoasignatura LIKE %s
+        ORDER BY iddeptoasignatura;
+    """, (f"%{term}%", f"%{term}%"))
+
+    resultados = cursor.fetchall()
+    cursor.close()
+    conn.close()
+
+    flash(f'Resultados para "{term}"', "info")
+    return render_template("departamentoasignatura_list.html", departamentos=resultados)
 
 
 

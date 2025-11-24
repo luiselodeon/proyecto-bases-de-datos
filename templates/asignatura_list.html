@@ -1,65 +1,60 @@
 {% extends 'base.html' %}
 
-{% block title %}Asignaturas{% endblock %}
+{% block title %}Directorio de Asignaturas{% endblock %}
 
 {% block content %}
-    <div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex justify-content-between align-items-center mb-4">
     <h1>Directorio de Asignaturas</h1>
-    <a href="{{ url_for('add_asignatura') }}" class="btn btn-primary">Añadir Asignatura</a>
+    <a href="{{ url_for('add_asignatura') }}" class="btn btn-primary">
+        Añadir Asignatura
+    </a>
 </div>
 
-<form action="{{ url_for('search_asignaturas') }}" method="get" class="mb-4">
-    <div class="input-group">
-        <input type="text" class="form-control" name="query" placeholder="Buscar por nombre o créditos...">
-        <button class="btn btn-outline-secondary" type="submit">Buscar</button>
+<div class="card">
+    <div class="card-header">Lista de Asignaturas</div>
+    <div class="card-body">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Créditos</th>
+                    <th>Horas/Sesión</th>
+                    <th>Departamento</th>
+                    <th>Clave</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in asignaturas %}
+                <tr>
+                    <td>{{ a.idasignatura }}</td>
+                    <td>{{ a.nombre_asignatura }}</td>
+                    <td>{{ a.creditos_asignatura }}</td>
+                    <td>{{ a.horas_por_sesion or '' }}</td>
+                    <td>{{ a.nombre_deptoasignatura or '' }}</td>
+                    <td>{{ a.clave_asignatura or '' }}</td>
+                    <td>
+                        <a href="{{ url_for('edit_asignatura', idasignatura=a.idasignatura) }}"
+                           class="btn btn-sm btn-warning">Editar</a>
+
+                        <form action="{{ url_for('delete_asignatura', idasignatura=a.idasignatura) }}"
+                              method="post" style="display:inline;">
+                            <button type="submit" class="btn btn-sm btn-danger"
+                                    onclick="return confirm('¿Eliminar esta asignatura?');">
+                                Eliminar
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center">No se encontraron asignaturas.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
-</form>
-
-
-    <div class="card">
-        <div class="card-header">Lista de asignaturas</div>
-        <div class="card-body">
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>ID Asignatura</th>
-                        <th>Nombre</th>
-                        <th>Créditos</th>
-                        <th>Horas por sesión</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for a in asignaturas %}
-                    <tr>
-                        <td>{{ a.idasignatura }}</td>
-                        <td>{{ a.nombre_asignatura }}</td>
-                        <td>{{ a.creditos_asignatura }}</td>
-                        <td>{{ a.horas_por_sesion }}</td>
-                        <td>
-                            <a href="{{ url_for('edit_asignatura', idasignatura=a.idasignatura) }}"
-                               class="btn btn-sm btn-warning">
-                                Editar
-                            </a>
-
-                            <form action="{{ url_for('delete_asignatura', idasignatura=a.idasignatura) }}"
-                                  method="post" style="display:inline;">
-                                <button type="submit" class="btn btn-sm btndanger"
-                                        onclick="return confirm('¿Eliminar esta asignatura?');">
-                                    Eliminar
-                                </button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="5" class="text-center">
-                            No hay asignaturas registradas.
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
+</div>
 {% endblock %}
+
