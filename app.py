@@ -150,6 +150,12 @@ def search_student():
     return render_template('index.html', students=students)
 
 
+@app.route('/placeholder/<section>')
+def placeholder(section):
+    """Ruta para secciones en construcción."""
+    return render_template('placeholder.html', section_name=section.replace('_', ' ').title())
+
+
 # --- Rutas para Carreras ---
 
 @app.route("/carreras")
