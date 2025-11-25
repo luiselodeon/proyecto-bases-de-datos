@@ -260,6 +260,7 @@ def list_carreras():
             ON c.iddepartamentoacademico = d.iddepartamentoacademico
         ORDER BY c.idcarrera;
     """)
+    
     carreras = cursor.fetchall()
     cursor.close()
     conn.close()
@@ -410,10 +411,6 @@ def search_carreras():
     flash(f'Mostrando resultados para "{query_term}".', "info")
     return render_template("carrera_list.html", carreras=carreras)
 
-
-# ---------------------------
-# CRUD Asignatura x Carrera
-# ---------------------------
 # ---------------------------
 # CRUD Asignatura x Carrera
 # ---------------------------
@@ -576,6 +573,38 @@ def list_departamentos():
 
     return render_template("departamento_list.html", departamentos=departamentos)
 
+@app.route("/departamentos/search")
+def search_departamentos():
+    """Busca departamentos académicos por ID o por nombre."""
+    query_term = request.args.get("query", "").strip()
+
+    # Si no escribieron nada, regresamos a la lista normal
+    if not query_term:
+        return redirect(url_for("list_departamentos"))
+
+    conn = get_db_connection()
+    if conn is None:
+        flash("No se pudo conectar a la base de datos.", "danger")
+        return redirect(url_for("list_departamentos"))
+
+    cursor = conn.cursor(dictionary=True)
+
+    # Buscamos por nombre o por ID convertido a texto
+    search_pattern = f"%{query_term}%"
+    cursor.execute("""
+        SELECT *
+        FROM departamentoacademico
+        WHERE nombre_departamento LIKE %s
+           OR CAST(iddepartamentoacademico AS CHAR) LIKE %s
+        ORDER BY iddepartamentoacademico;
+    """, (search_pattern, search_pattern))
+
+    departamentos = cursor.fetchall()
+    cursor.close()
+    conn.close()
+
+    flash(f'Mostrando resultados para "{query_term}".', "info")
+    return render_template("departamento_list.html", departamentos=departamentos)
 
 @app.route("/departamentos/add", methods=["GET", "POST"])
 def add_departamento():
@@ -611,11 +640,16 @@ def edit_departamento(iddep):
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
-    cursor.execute("SELECT * FROM departamentoacademico WHERE iddepartamentoacademico = %s;", (iddep,))
+    cursor.execute(
+        "SELECT * FROM departamentoacademico WHERE iddepartamentoacademico = %s;",
+        (iddep,)
+    )
     departamento = cursor.fetchone()
 
     if not departamento:
         flash("Departamento no encontrado.", "warning")
+        cursor.close()
+        conn.close()
         return redirect(url_for("list_departamentos"))
 
     if request.method == "POST":
@@ -644,54 +678,40 @@ def edit_departamento(iddep):
 
 @app.route("/departamentos/delete/<int:iddep>", methods=["POST"])
 def delete_departamento(iddep):
+    """Elimina un departamento académico.
+
+    Si está siendo usado como FK en otra tabla (por ejemplo, carrera),
+    MySQL lanzará un error y mostramos un mensaje amable.
+    """
     conn = get_db_connection()
     cursor = conn.cursor()
 
     try:
-        cursor.execute("DELETE FROM departamentoacademico WHERE iddepartamentoacademico = %s", (iddep,))
+        cursor.execute(
+            "DELETE FROM departamentoacademico WHERE iddepartamentoacademico = %s",
+            (iddep,)
+        )
         conn.commit()
         flash("Departamento eliminado correctamente.", "success")
+
     except mysql.connector.Error as err:
         conn.rollback()
-        flash(f"No se pudo eliminar: {err}", "danger")
+
+        # Si es por Foreign Key, mostramos un mensaje más entendible
+        if err.errno == errorcode.ER_ROW_IS_REFERENCED_2:
+            flash(
+                "No se puede eliminar el departamento porque está siendo usado "
+                "en otras tablas (por ejemplo, alguna carrera).",
+                "danger"
+            )
+        else:
+            flash(f"No se pudo eliminar: {err}", "danger")
 
     cursor.close()
     conn.close()
-
     return redirect(url_for("list_departamentos"))
 
-@app.route("/departamentos/search")
-def search_departamentos():
-    query_term = request.args.get("query", "")
-    if not query_term:
-        return redirect(url_for("list_departamentos"))
 
-    conn = get_db_connection()
-    if conn is None:
-        return redirect(url_for("list_departamentos"))
-
-    cursor = conn.cursor(dictionary=True)
-    like = f"%{query_term}%"
-
-    cursor.execute("""
-        SELECT iddepartamentoacademico, nombre_departamento
-        FROM departamentoacademico
-        WHERE nombre_departamento LIKE %s
-           OR iddepartamentoacademico LIKE %s
-        ORDER BY iddepartamentoacademico;
-    """, (like, like))
-
-    departamentos = cursor.fetchall()
-    cursor.close()
-    conn.close()
-
-    flash(f'Mostrando resultados para "{query_term}".', "info")
-    return render_template("departamento_list.html", departamentos=departamentos)
-
-
-# ---------------------------
-# CRUD Asignatura
-# ---------------------------
 # ---------------------------
 # CRUD Asignatura
 # ---------------------------
@@ -704,16 +724,16 @@ def list_asignaturas():
 
     cursor = conn.cursor(dictionary=True)
     cursor.execute("""
-        SELECT a.idasignatura,
-               a.nombre_asignatura,
-               a.creditos_asignatura,
-               a.horas_por_sesion,
-               a.clave_asignatura,
-               a.iddeptoasignatura,
-               da.nombre_deptoasignatura
+        SELECT
+            a.idasignatura,
+            a.nombre_asignatura,
+            a.creditos_asignatura,
+            a.horas_por_sesion,
+            d.nombre_deptoasignatura,   -- 👈 mismo nombre que usas en el template
+            a.clave_asignatura          -- 👈 la clave que generas en add/edit
         FROM asignatura a
-        LEFT JOIN departamentoasignatura da
-               ON a.iddeptoasignatura = da.iddeptoasignatura
+        LEFT JOIN departamentoasignatura d
+          ON a.iddeptoasignatura = d.iddeptoasignatura
         ORDER BY a.idasignatura;
     """)
     asignaturas = cursor.fetchall()

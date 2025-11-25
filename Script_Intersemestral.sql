@@ -187,15 +187,17 @@ CREATE TABLE IF NOT EXISTS `controlescolar_db`.`carrera` (
   `descripcion_carrera` VARCHAR(45) NULL,
   `creditos_carrera` INT(6) NULL,
   `iddepartamentoacademico` INT(8) NOT NULL,
-  `costo_inscripcion` DECIMAL(10,2) NULL COMMENT 'costo de inscrpcion por periodo escolar',
+  `costo_inscripcion` DECIMAL(10,2) NULL COMMENT 'costo de inscripción por periodo escolar',
   PRIMARY KEY (`idcarrera`),
-  UNIQUE INDEX `iddepartamentoacademico_UNIQUE` (`iddepartamentoacademico` ASC) VISIBLE,
+  -- 👇 OJO: aquí quitamos el UNIQUE
+  INDEX `idx_carrera_depto` (`iddepartamentoacademico`),
   CONSTRAINT `fk_iddepartamentoacademico`
     FOREIGN KEY (`iddepartamentoacademico`)
     REFERENCES `controlescolar_db`.`departamentoacademico` (`iddepartamentoacademico`)
     ON DELETE RESTRICT
-    ON UPDATE RESTRICT)
-ENGINE = InnoDB;
+    ON UPDATE RESTRICT
+) ENGINE = InnoDB;
+
 
 -- -----------------------------------------------------
 -- Table `controlescolar_db`.`asignaturaxcarrera`
@@ -240,27 +242,22 @@ CREATE TABLE IF NOT EXISTS `controlescolar_db`.`inscripcionxcarrera` (
 -- -----------------------------------------------------
 -- Table `controlescolar_db`.`asignatura`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS asignatura (
-  idasignatura INT(8) NOT NULL,
-  nombre_asignatura VARCHAR(45) NULL,
-  creditos_asignatura INT(6) NOT NULL,
-  horas_por_sesion DECIMAL(4,2) NULL,
+CREATE TABLE IF NOT EXISTS `asignatura` (
+  `idasignatura` INT(8) NOT NULL,
+  `nombre_asignatura` VARCHAR(45) NULL,
+  `creditos_asignatura` INT(6) NOT NULL,
+  `horas_por_sesion` DECIMAL(4,2) NULL,
+  `iddeptoasignatura` INT(8) NULL,
+  `clave_asignatura` VARCHAR(10) NULL,         -- 👈 Nueva columna añadida
+  PRIMARY KEY (`idasignatura`),
 
-  -- Nuevo: departamento de la asignatura (FK)
-  iddeptoasignatura INT(8) NULL,
+  CONSTRAINT `fk_asignatura_depto`
+    FOREIGN KEY (`iddeptoasignatura`)
+    REFERENCES `departamentoasignatura` (`iddeptoasignatura`)
+    ON DELETE RESTRICT                 -- Evita que borres un depto si está en uso
+    ON UPDATE CASCADE
+) ENGINE=InnoDB;
 
-  -- Nuevo: clave generada (ej: MATE-101)
-  clave_asignatura VARCHAR(20) NULL,
-
-  PRIMARY KEY (idasignatura),
-
-  -- Relación con departamentoasignatura
-  CONSTRAINT fk_asig_depto
-    FOREIGN KEY (iddeptoasignatura)
-    REFERENCES departamentoasignatura(iddeptoasignatura)
-    ON UPDATE NO ACTION
-    ON DELETE SET NULL
-) ENGINE = InnoDB;
 
 
 
