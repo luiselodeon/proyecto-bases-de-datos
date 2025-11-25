@@ -1,88 +1,195 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Control Escolar{% endblock %}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Control Escolar{% endblock %}</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 
 <body>
 
-    <!-- NAVBAR -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-  <div class="container">
-    <a class="navbar-brand" href="{{ url_for('index') }}">Control Escolar</a>
+  <!-- NAVBAR -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="{{ url_for('index') }}">Control Escolar</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+        aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
 
-    <div class="collapse navbar-collapse">
-      <ul class="navbar-nav ms-auto">
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
 
-        <!-- Estudiantes -->
-        <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('index') }}">Estudiantes</a>
-        </li>
+          <!-- Gestión de Estudiantes -->
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              Gestión de Estudiantes
+            </a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="{{ url_for('index') }}">Registro y Consulta</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('placeholder', section='historial_academico') }}">Historial
+                  Académico</a></li>
+              <li><a class="dropdown-item"
+                  href="{{ url_for('placeholder', section='inscripciones') }}">Inscripciones</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('placeholder', section='asignacion_grupos') }}">Asignación a
+                  Grupos</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('placeholder', section='progreso_academico') }}">Seguimiento
+                  Progreso</a></li>
+            </ul>
+          </li>
 
-        <!-- Carreras -->
-        <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('list_carreras') }}">Carreras</a>
-        </li>
+          <!-- Gestión de Docentes -->
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              Gestión de Docentes
+            </a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="{{ url_for('placeholder', section='info_docente') }}">Administración
+                  Personal</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('placeholder', section='asignacion_cursos') }}">Asignación a
+                  Cursos</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('placeholder', section='horarios_docente') }}">Horarios</a>
+              </li>
+              <li><a class="dropdown-item" href="{{ url_for('placeholder', section='capacitacion') }}">Capacitación y
+                  Evaluaciones</a></li>
+            </ul>
+          </li>
 
-        <!-- Asignatura x Carrera -->
-         <li class="nav-item">
-             <a class="nav-link" href="{{ url_for('list_asignaturaxcarrera') }}"> Asignaturas por Carrera</a>
+          <!-- Cursos y Planes de Estudio -->
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              Cursos y Planes
+            </a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="{{ url_for('list_carreras') }}">Planes de Estudio (Carreras)</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('list_asignaturas') }}">Asignaturas</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('list_asignaturaxcarrera') }}">Asignaturas por Carrera</a>
+              </li>
+              <li><a class="dropdown-item" href="{{ url_for('placeholder', section='creditos') }}">Créditos</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('placeholder', section='requisitos') }}">Requisitos
+                  Programa</a></li>
+            </ul>
+          </li>
 
-        <!-- Departamentos -->
-         <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('list_departamentos') }}">Departamentos</a>
-        </li>
-        <!-- Asignaturas -->
-         <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('list_asignaturas') }}">Asignaturas</a>
-        </li>
-        <!-- Tipo de beca -->
-        <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('list_tipobeca') }}">Tipos de Beca</a>
-        </li>
-        <!-- Beca -->
-        <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('list_becas') }}">Becas</a>
-        </li>
-        <!-- Departamento de Asignatura -->
-        <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('list_departamentos_asignatura') }}">Departamentos de Asignatura</a>
-        </li>
+          <!-- Calificaciones y Evaluaciones -->
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              Calificaciones
+            </a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="{{ url_for('placeholder', section='registro_notas') }}">Registro de
+                  Notas</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('placeholder', section='evaluacion_continua') }}">Evaluación
+                  Continua</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('placeholder', section='examenes') }}">Exámenes</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('placeholder', section='trabajos') }}">Trabajos</a></li>
+              <li><a class="dropdown-item"
+                  href="{{ url_for('placeholder', section='reportes_evaluacion') }}">Reportes</a></li>
+            </ul>
+          </li>
 
+          <!-- Control de Asistencia -->
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              Asistencia
+            </a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="{{ url_for('placeholder', section='registro_asistencia') }}">Registro
+                  Asistencia</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('placeholder', section='reportes_asistencia') }}">Reportes
+                  Asistencia</a></li>
+            </ul>
+          </li>
 
-      </ul>
+          <!-- Administración de Aulas y Horarios -->
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              Aulas y Horarios
+            </a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="{{ url_for('list_departamentos') }}">Departamentos Académicos</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('list_departamentos_asignatura') }}">Departamentos de
+                  Asignatura</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('placeholder', section='asignacion_aulas') }}">Asignación de
+                  Aulas</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('placeholder', section='gestion_horarios') }}">Gestión de
+                  Horarios</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('placeholder', section='recursos') }}">Gestión de
+                  Recursos</a></li>
+            </ul>
+          </li>
+
+          <!-- Finanzas y Becas -->
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              Finanzas y Becas
+            </a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="{{ url_for('list_becas') }}">Becas</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('list_tipobeca') }}">Tipos de Beca</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('placeholder', section='pagos') }}">Administración de
+                  Pagos</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('placeholder', section='cobros') }}">Cobros</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('placeholder', section='estados_cuenta') }}">Estados de
+                  Cuenta</a></li>
+            </ul>
+          </li>
+
+          <!-- Reportes y Estadísticas -->
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('placeholder', section='reportes_estadisticas') }}">Reportes</a>
+          </li>
+
+          <!-- Usuarios y Roles -->
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              Usuarios
+            </a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="{{ url_for('placeholder', section='gestion_perfiles') }}">Gestión de
+                  Perfiles</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('placeholder', section='permisos_estudiantes') }}">Permisos
+                  Estudiantes</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('placeholder', section='permisos_docentes') }}">Permisos
+                  Docentes</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('placeholder', section='permisos_admin') }}">Permisos
+                  Administrativos</a></li>
+            </ul>
+          </li>
+
+        </ul>
+      </div>
     </div>
+  </nav>
+
+  <!-- END NAVBAR -->
+
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <div class="container mt-5">
+
+    <!-- Mostrar mensajes flash (alertas) -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ category }} alert-dismissible fade show mb-3" role="alert">
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <!-- Aquí se cargan todos los templates hijos -->
+    {% block content %}{% endblock %}
+
   </div>
-</nav>
 
-    <!-- END NAVBAR -->
-
-
-    <!-- CONTENIDO PRINCIPAL -->
-    <div class="container mt-5">
-
-        <!-- Mostrar mensajes flash (alertas) -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show mb-3" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-
-        <!-- Aquí se cargan todos los templates hijos -->
-        {% block content %}{% endblock %}
-
-    </div>
-
-    <!-- JS de Bootstrap -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- JS de Bootstrap -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>
+
 </html>
