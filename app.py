@@ -28,19 +28,19 @@ app.secret_key = "SUPER_CLAVE_SESION"
 
 # --- Rutas para Estudiantes ---
 
-@app.route('/')
+@app.route('/gestion_estudiantes/registro_consulta')
 def index():
     """Muestra la lista de todos los estudiantes."""
     conn = get_db_connection()
     if conn is None:
-        return render_template('index.html', students=[])
+        return render_template('registro_consulta.html', students=[])
     
     cursor = conn.cursor(dictionary=True)
     students = students_crud.list_students(cursor)
     cursor.close()
     conn.close()
     
-    return render_template('estudiantes/index.html', students=students)
+    return render_template('estudiantes/registro_consulta.html', students=students)
 
 @app.route('/add', methods=['GET', 'POST'])
 def add_student():
@@ -158,7 +158,7 @@ def search_student():
     conn.close()
 
     flash(f'Mostrando resultados para "{query_term}".', 'info')
-    return render_template('estudiantes/index.html', students=students)
+    return render_template('estudiantes/registro_consulta.html', students=students)
 
 
 @app.route('/placeholder/<section>')
@@ -875,7 +875,7 @@ if __name__ == "__main__":
 
 
 # ruta de login
-@app.route("/login", methods=["GET", "POST"])
+@app.route("/", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
         email = request.form["email"]
@@ -910,4 +910,49 @@ def logout():
     session.clear()
     flash("Sesión cerrada.", "success")
     return redirect(url_for("login"))
+
+#ruta del registro
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    if request.method == "POST":
+        email = request.form["username"].strip()
+        password = request.form["password"]
+
+        role = "operacion_academica"   # rol por default
+
+        if not email or not password:
+            flash("Rellena todos los campos", "warning")
+            return redirect(url_for("register"))
+
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        # validar si ya existe el email
+        cursor.execute(
+            "SELECT idusuario FROM usuarios WHERE email=%s",
+            (email,)
+        )
+        exists = cursor.fetchone()
+
+        if exists:
+            flash("Ya existe un usuario con ese correo.", "warning")
+            cursor.close()
+            conn.close()
+            return redirect(url_for("register"))
+
+        # insertar usuario sin hashing
+        cursor.execute(
+            "INSERT INTO usuarios (email, password, rol) VALUES (%s, %s, %s)",
+            (email, password, role)
+        )
+        conn.commit()
+
+        cursor.close()
+        conn.close()
+
+        flash("Usuario registrado. Inicia sesión.", "success")
+        return redirect(url_for("login"))
+
+    return render_template("register.html")
 
