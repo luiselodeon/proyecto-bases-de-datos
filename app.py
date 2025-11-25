@@ -1,7 +1,12 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, session, url_for, flash
+from flask_bcrypt import Bcrypt
 from dotenv import load_dotenv
 import mysql.connector
+from utils.auth import login_required, role_required
+
+
+
 
 # --- Importar CRUDs y conexión DB ---
 from utils.db import get_db_connection
@@ -17,6 +22,9 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "a-super-secret-key")
 
+# Inicializar flask bcrypt
+bcrypt = Bcrypt(app)
+app.secret_key = "SUPER_CLAVE_SESION"
 
 # --- Rutas para Estudiantes ---
 
@@ -161,7 +169,7 @@ def placeholder(section):
 
 # --- Rutas para Carreras ---
 
-@app.route("/carreras")
+@app.route("/cursos_planes/carreras")
 def list_carreras():
     conn = get_db_connection()
     if conn is None:
@@ -173,7 +181,7 @@ def list_carreras():
     conn.close()
     return render_template("cursos/carrera_list.html", carreras=carreras)
 
-@app.route("/carreras/add", methods=["GET", "POST"])
+@app.route("/cursos_planes/carreras/add", methods=["GET", "POST"])
 def add_carrera():
     conn = get_db_connection()
     if conn is None:
@@ -206,7 +214,7 @@ def add_carrera():
     conn.close()
     return render_template("cursos/carrera_form.html", carrera=None, departamentos=departamentos)
 
-@app.route("/carreras/edit/<int:idcarrera>", methods=["GET", "POST"])
+@app.route("/cursos_planes/carreras/edit/<int:idcarrera>", methods=["GET", "POST"])
 def edit_carrera(idcarrera):
     conn = get_db_connection()
     if conn is None:
@@ -245,7 +253,7 @@ def edit_carrera(idcarrera):
     conn.close()
     return render_template("cursos/carrera_form.html", carrera=carrera, departamentos=departamentos)
 
-@app.route("/carreras/delete/<int:idcarrera>", methods=["POST"])
+@app.route("/cursos_planes/carreras/delete/<int:idcarrera>", methods=["POST"])
 def delete_carrera(idcarrera):
     conn = get_db_connection()
     if conn is None:
@@ -264,7 +272,7 @@ def delete_carrera(idcarrera):
         conn.close()
     return redirect(url_for("list_carreras"))
 
-@app.route("/carreras/search")
+@app.route("/cursos_planes/carreras/search")
 def search_carreras():
     query_term = request.args.get("query", "")
     if not query_term:
@@ -285,7 +293,7 @@ def search_carreras():
 
 # --- Rutas para Asignatura x Carrera ---
 
-@app.route("/asignaturaxcarrera")
+@app.route("/cursos_planes/asignaturaxcarrera")
 def list_asignaturaxcarrera():
     conn = get_db_connection()
     if conn is None:
@@ -297,7 +305,7 @@ def list_asignaturaxcarrera():
     conn.close()
     return render_template("cursos/asignaturaxcarrera_list.html", relaciones=relaciones)
 
-@app.route("/asignaturaxcarrera/add", methods=["GET", "POST"])
+@app.route("/cursos_planes/asignaturaxcarrera/add", methods=["GET", "POST"])
 def add_asignaturaxcarrera():
     conn = get_db_connection()
     if conn is None:
@@ -328,7 +336,7 @@ def add_asignaturaxcarrera():
     conn.close()
     return render_template("cursos/asignaturaxcarrera_form.html", carreras=carreras, asignaturas=asignaturas, relacion=None)
 
-@app.route("/asignaturaxcarrera/delete/<int:idcarrera>/<int:idasignatura>", methods=["POST"])
+@app.route("/cursos_planes/asignaturaxcarrera/delete/<int:idcarrera>/<int:idasignatura>", methods=["POST"])
 def delete_asignaturaxcarrera(idcarrera, idasignatura):
     conn = get_db_connection()
     if conn is None:
@@ -347,7 +355,7 @@ def delete_asignaturaxcarrera(idcarrera, idasignatura):
         conn.close()
     return redirect(url_for("list_asignaturaxcarrera"))
 
-@app.route("/asignaturaxcarrera/search")
+@app.route("/cursos_planes/asignaturaxcarrera/search")
 def search_asignaturaxcarrera():
     query_term = request.args.get("query", "").strip()
     if not query_term:
@@ -367,7 +375,7 @@ def search_asignaturaxcarrera():
 
 # --- Rutas para Departamento Académico ---
 
-@app.route("/departamentos")
+@app.route("/aulas_horarios/departamentos")
 def list_departamentos():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
@@ -376,7 +384,7 @@ def list_departamentos():
     conn.close()
     return render_template("aulas_horarios/departamento_list.html", departamentos=departamentos)
 
-@app.route("/departamentos/add", methods=["GET", "POST"])
+@app.route("/aulas_horarios/departamentos/add", methods=["GET", "POST"])
 def add_departamento():
     if request.method == "POST":
         iddep = request.form["iddepartamentoacademico"]
@@ -398,7 +406,7 @@ def add_departamento():
 
     return render_template("aulas_horarios/departamento_form.html", departamento=None)
 
-@app.route("/departamentos/edit/<int:iddep>", methods=["GET", "POST"])
+@app.route("/aulas_horarios/departamentos/edit/<int:iddep>", methods=["GET", "POST"])
 def edit_departamento(iddep):
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
@@ -426,7 +434,7 @@ def edit_departamento(iddep):
         return redirect(url_for("list_departamentos"))
     return render_template("aulas_horarios/departamento_form.html", departamento=departamento)
 
-@app.route("/departamentos/delete/<int:iddep>", methods=["POST"])
+@app.route("/aulas_horarios/departamentos/delete/<int:iddep>", methods=["POST"])
 def delete_departamento(iddep):
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -442,7 +450,7 @@ def delete_departamento(iddep):
         conn.close()
     return redirect(url_for("list_departamentos"))
 
-@app.route("/departamentos/search")
+@app.route("/aulas_horarios/departamentos/search")
 def search_departamentos():
     query_term = request.args.get("query", "")
     if not query_term:
@@ -462,7 +470,7 @@ def search_departamentos():
 
 # --- Rutas para Asignatura ---
 
-@app.route("/asignaturas")
+@app.route("/cursos_planes/asignaturas")
 def list_asignaturas():
     conn = get_db_connection()
     if conn is None:
@@ -474,7 +482,7 @@ def list_asignaturas():
     conn.close()
     return render_template("cursos/asignatura_list.html", asignaturas=asignaturas)
 
-@app.route("/asignaturas/add", methods=["GET", "POST"])
+@app.route("/cursos_planes/asignaturas/add", methods=["GET", "POST"])
 def add_asignatura():
     conn = get_db_connection()
     if conn is None:
@@ -508,7 +516,7 @@ def add_asignatura():
     return render_template("cursos/asignatura_form.html", asignatura=None, departamentos=departamentos)
 
 
-@app.route("/asignaturas/edit/<int:idasignatura>", methods=["GET", "POST"])
+@app.route("/cursos_planes/asignaturas/edit/<int:idasignatura>", methods=["GET", "POST"])
 def edit_asignatura(idasignatura):
     conn = get_db_connection()
     if conn is None:
@@ -547,7 +555,7 @@ def edit_asignatura(idasignatura):
     conn.close()
     return render_template("cursos/asignatura_form.html", asignatura=asignatura, departamentos=departamentos)
 
-@app.route("/asignaturas/delete/<int:idasignatura>", methods=["POST"])
+@app.route("/cursos_planes/asignaturas/delete/<int:idasignatura>", methods=["POST"])
 def delete_asignatura(idasignatura):
     conn = get_db_connection()
     if conn is None:
@@ -569,7 +577,7 @@ def delete_asignatura(idasignatura):
 
 # --- Rutas para Tipo de Beca ---
 
-@app.route("/tipobeca")
+@app.route("/finanzas_becas/tipobeca")
 def list_tipobeca():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
@@ -578,7 +586,7 @@ def list_tipobeca():
     conn.close()
     return render_template("finanzas_becas/tipobeca_list.html", tipos=tipos)
 
-@app.route("/tipobeca/add", methods=["GET", "POST"])
+@app.route("/finanzas_becas/tipobeca/add", methods=["GET", "POST"])
 def add_tipobeca():
     if request.method == "POST":
         idtipo = request.form["idtipo_beca"]
@@ -598,7 +606,7 @@ def add_tipobeca():
         return redirect(url_for("list_tipobeca"))
     return render_template("finanzas_becas/tipobeca_form.html", tipo=None)
 
-@app.route("/tipobeca/edit/<int:idtipo>", methods=["GET", "POST"])
+@app.route("/finanzas_becas/tipobeca/edit/<int:idtipo>", methods=["GET", "POST"])
 def edit_tipobeca(idtipo):
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
@@ -626,7 +634,7 @@ def edit_tipobeca(idtipo):
         return redirect(url_for("list_tipobeca"))
     return render_template("finanzas_becas/tipobeca_form.html", tipo=tipo)
 
-@app.route("/tipobeca/delete/<int:idtipo>", methods=["POST"])
+@app.route("/finanzas_becas/tipobeca/delete/<int:idtipo>", methods=["POST"])
 def delete_tipobeca(idtipo):
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -642,7 +650,7 @@ def delete_tipobeca(idtipo):
         conn.close()
     return redirect(url_for("list_tipobeca"))
 
-@app.route("/tipobeca/search")
+@app.route("/finanzas_becas/tipobeca/search")
 def search_tipobeca():
     query_term = request.args.get("query", "")
     if not query_term:
@@ -659,7 +667,8 @@ def search_tipobeca():
 
 # --- Rutas para Beca ---
 
-@app.route("/becas")
+@app.route("/finanzas_becas/becas")
+@role_required("finanzas_becas")
 def list_becas():
     conn = get_db_connection()
     if conn is None:
@@ -670,7 +679,7 @@ def list_becas():
     conn.close()
     return render_template("finanzas_becas/beca_list.html", becas=becas)
 
-@app.route("/becas/add", methods=["GET", "POST"])
+@app.route("/finanzas_becas/becas/add", methods=["GET", "POST"])
 def add_beca():
     conn = get_db_connection()
     if conn is None: return redirect(url_for("list_becas"))
@@ -702,7 +711,7 @@ def add_beca():
     return render_template("finanzas_becas/beca_form.html", beca=None, tipos_beca=tipos_beca)
 
 
-@app.route("/becas/edit/<int:idbeca>", methods=["GET", "POST"])
+@app.route("/finanzas_becas/becas/edit/<int:idbeca>", methods=["GET", "POST"])
 def edit_beca(idbeca):
     conn = get_db_connection()
     if conn is None: return redirect(url_for("list_becas"))
@@ -739,7 +748,7 @@ def edit_beca(idbeca):
     conn.close()
     return render_template("finanzas_becas/beca_form.html", beca=beca, tipos_beca=tipos_beca)
 
-@app.route("/becas/delete/<int:idbeca>", methods=["POST"])
+@app.route("/finanzas_becas/becas/delete/<int:idbeca>", methods=["POST"])
 def delete_beca(idbeca):
     conn = get_db_connection()
     if conn is None: return redirect(url_for("list_becas"))
@@ -756,7 +765,7 @@ def delete_beca(idbeca):
         conn.close()
     return redirect(url_for("list_becas"))
 
-@app.route("/becas/search")
+@app.route("/finanzas_becas/becas/search")
 def search_becas():
     query_term = request.args.get("query", "").strip()
     if not query_term:
@@ -775,7 +784,7 @@ def search_becas():
 
 # --- Rutas para Departamento de Asignatura ---
 
-@app.route("/departamentos_asignatura")
+@app.route("/aulas_horarios/departamentos_asignatura")
 def list_departamentos_asignatura():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
@@ -784,7 +793,7 @@ def list_departamentos_asignatura():
     conn.close()
     return render_template("aulas_horarios/departamentoasignatura_list.html", departamentos=departamentos)
 
-@app.route("/departamentos_asignatura/add", methods=["GET", "POST"])
+@app.route("/aulas_horarios/departamentos_asignatura/add", methods=["GET", "POST"])
 def add_departamento_asignatura():
     if request.method == "POST":
         iddep = request.form["iddeptoasignatura"]
@@ -804,7 +813,7 @@ def add_departamento_asignatura():
         return redirect(url_for("list_departamentos_asignatura"))
     return render_template("aulas_horarios/departamentoasignatura_form.html", departamento=None)
 
-@app.route("/departamentos_asignatura/edit/<int:iddep>", methods=["GET", "POST"])
+@app.route("/aulas_horarios/departamentos_asignatura/edit/<int:iddep>", methods=["GET", "POST"])
 def edit_departamento_asignatura(iddep):
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
@@ -832,7 +841,7 @@ def edit_departamento_asignatura(iddep):
         return redirect(url_for("list_departamentos_asignatura"))
     return render_template("departamentoasignatura_form.html", departamento=departamento)
 
-@app.route("/departamentos_asignatura/delete/<int:iddep>", methods=["POST"])
+@app.route("/aulas_horarios/departamentos_asignatura/delete/<int:iddep>", methods=["POST"])
 def delete_departamento_asignatura(iddep):
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -848,7 +857,7 @@ def delete_departamento_asignatura(iddep):
         conn.close()
     return redirect(url_for("list_departamentos_asignatura"))
 
-@app.route("/departamentos_asignatura/search")
+@app.route("/aulas_horarios/departamentos_asignatura/search")
 def search_departamentos_asignatura():
     term = request.args.get("query", "")
     conn = get_db_connection()
@@ -863,3 +872,42 @@ def search_departamentos_asignatura():
 # --- Iniciar la Aplicación ---
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=True)
+
+
+# ruta de login
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        email = request.form["email"]
+        password_form = request.form["password"]
+
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        cursor.execute("SELECT * FROM usuarios WHERE email=%s", (email,))
+        user = cursor.fetchone()
+        print("Usuario obtenido:", user)
+
+        if user and user["password"] == password_form:
+            # Si estás usando bcrypt, cambiar por:
+            # if bcrypt.check_password_hash(user["password"], password_form):
+
+            session["user_id"] = user["idusuario"]
+            session["user_email"] = user["email"]
+            session["user_rol"] = user["rol"]
+
+            return redirect(url_for("index"))
+        else:
+            flash("Credenciales incorrectas", "danger")
+
+    return render_template("login.html")
+
+
+
+# ruta de logout
+@app.route("/logout")
+def logout():
+    session.clear()
+    flash("Sesión cerrada.", "success")
+    return redirect(url_for("login"))
+
