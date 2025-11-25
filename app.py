@@ -5,7 +5,10 @@ import mysql.connector
 
 # --- Importar CRUDs y conexión DB ---
 from utils.db import get_db_connection
-from utils import students_crud, carreras_crud, asignaturaxcarrera_crud, departamentos_crud, asignaturas_crud, tipobeca_crud, becas_crud, departamentoasignatura_crud
+from utils.estudiantes import students_crud
+from utils.cursos import carreras_crud, asignaturas_crud, asignaturaxcarrera_crud
+from utils.aulas_horarios import departamentos_crud, departamentoasignatura_crud
+from utils.finanzas_becas import becas_crud, tipobeca_crud
 
 # --- CONFIGURACIÓN ---
 load_dotenv()
@@ -29,7 +32,7 @@ def index():
     cursor.close()
     conn.close()
     
-    return render_template('index.html', students=students)
+    return render_template('estudiantes/index.html', students=students)
 
 @app.route('/add', methods=['GET', 'POST'])
 def add_student():
@@ -60,7 +63,7 @@ def add_student():
 
         return redirect(url_for('index'))
 
-    return render_template('student_form.html', student=None)
+    return render_template('estudiantes/student_form.html', student=None)
 
 @app.route('/edit/<int:matricula>', methods=['GET', 'POST'])
 def edit_student(matricula):
@@ -99,7 +102,7 @@ def edit_student(matricula):
 
     if student:
         student_dict = dict(zip(cursor.column_names, student)) if not isinstance(student, dict) else student
-        return render_template('student_form.html', student=student_dict, matricula=matricula)
+        return render_template('estudiantes/student_form.html', student=student_dict, matricula=matricula)
     else:
         flash('Estudiante no encontrado.', 'warning')
         return redirect(url_for('index'))
@@ -147,7 +150,7 @@ def search_student():
     conn.close()
 
     flash(f'Mostrando resultados para "{query_term}".', 'info')
-    return render_template('index.html', students=students)
+    return render_template('estudiantes/index.html', students=students)
 
 
 @app.route('/placeholder/<section>')
@@ -168,7 +171,7 @@ def list_carreras():
     carreras = carreras_crud.list_carreras(cursor)
     cursor.close()
     conn.close()
-    return render_template("carrera_list.html", carreras=carreras)
+    return render_template("cursos/carrera_list.html", carreras=carreras)
 
 @app.route("/carreras/add", methods=["GET", "POST"])
 def add_carrera():
@@ -201,7 +204,7 @@ def add_carrera():
     departamentos = carreras_crud.get_departamentos(cursor)
     cursor.close()
     conn.close()
-    return render_template("carrera_form.html", carrera=None, departamentos=departamentos)
+    return render_template("cursos/carrera_form.html", carrera=None, departamentos=departamentos)
 
 @app.route("/carreras/edit/<int:idcarrera>", methods=["GET", "POST"])
 def edit_carrera(idcarrera):
@@ -240,7 +243,7 @@ def edit_carrera(idcarrera):
     departamentos = carreras_crud.get_departamentos(cursor)
     cursor.close()
     conn.close()
-    return render_template("carrera_form.html", carrera=carrera, departamentos=departamentos)
+    return render_template("cursos/carrera_form.html", carrera=carrera, departamentos=departamentos)
 
 @app.route("/carreras/delete/<int:idcarrera>", methods=["POST"])
 def delete_carrera(idcarrera):
@@ -277,7 +280,7 @@ def search_carreras():
     conn.close()
 
     flash(f'Mostrando resultados para "{query_term}".', "info")
-    return render_template("carrera_list.html", carreras=carreras)
+    return render_template("cursos/carrera_list.html", carreras=carreras)
 
 
 # --- Rutas para Asignatura x Carrera ---
@@ -292,7 +295,7 @@ def list_asignaturaxcarrera():
     relaciones = asignaturaxcarrera_crud.list_asignaturaxcarrera(cursor)
     cursor.close()
     conn.close()
-    return render_template("asignaturaxcarrera_list.html", relaciones=relaciones)
+    return render_template("cursos/asignaturaxcarrera_list.html", relaciones=relaciones)
 
 @app.route("/asignaturaxcarrera/add", methods=["GET", "POST"])
 def add_asignaturaxcarrera():
@@ -323,7 +326,7 @@ def add_asignaturaxcarrera():
     asignaturas = asignaturaxcarrera_crud.get_asignaturas(cursor)
     cursor.close()
     conn.close()
-    return render_template("asignaturaxcarrera_form.html", carreras=carreras, asignaturas=asignaturas, relacion=None)
+    return render_template("cursos/asignaturaxcarrera_form.html", carreras=carreras, asignaturas=asignaturas, relacion=None)
 
 @app.route("/asignaturaxcarrera/delete/<int:idcarrera>/<int:idasignatura>", methods=["POST"])
 def delete_asignaturaxcarrera(idcarrera, idasignatura):
@@ -359,7 +362,7 @@ def search_asignaturaxcarrera():
     cursor.close()
     conn.close()
     flash(f'Mostrando resultados para "{query_term}".', "info")
-    return render_template("asignaturaxcarrera_list.html", relaciones=relaciones)
+    return render_template("cursos/asignaturaxcarrera_list.html", relaciones=relaciones)
 
 
 # --- Rutas para Departamento Académico ---
@@ -371,7 +374,7 @@ def list_departamentos():
     departamentos = departamentos_crud.list_departamentos(cursor)
     cursor.close()
     conn.close()
-    return render_template("departamento_list.html", departamentos=departamentos)
+    return render_template("aulas_horarios/departamento_list.html", departamentos=departamentos)
 
 @app.route("/departamentos/add", methods=["GET", "POST"])
 def add_departamento():
@@ -393,7 +396,7 @@ def add_departamento():
             conn.close()
         return redirect(url_for("list_departamentos"))
 
-    return render_template("departamento_form.html", departamento=None)
+    return render_template("aulas_horarios/departamento_form.html", departamento=None)
 
 @app.route("/departamentos/edit/<int:iddep>", methods=["GET", "POST"])
 def edit_departamento(iddep):
@@ -421,7 +424,7 @@ def edit_departamento(iddep):
     if not departamento:
         flash("Departamento no encontrado.", "warning")
         return redirect(url_for("list_departamentos"))
-    return render_template("departamento_form.html", departamento=departamento)
+    return render_template("aulas_horarios/departamento_form.html", departamento=departamento)
 
 @app.route("/departamentos/delete/<int:iddep>", methods=["POST"])
 def delete_departamento(iddep):
@@ -454,7 +457,7 @@ def search_departamentos():
     cursor.close()
     conn.close()
     flash(f'Mostrando resultados para "{query_term}".', "info")
-    return render_template("departamento_list.html", departamentos=departamentos)
+    return render_template("aulas_horarios/departamento_list.html", departamentos=departamentos)
 
 
 # --- Rutas para Asignatura ---
@@ -469,7 +472,7 @@ def list_asignaturas():
     asignaturas = asignaturas_crud.list_asignaturas(cursor)
     cursor.close()
     conn.close()
-    return render_template("asignatura_list.html", asignaturas=asignaturas)
+    return render_template("cursos/asignatura_list.html", asignaturas=asignaturas)
 
 @app.route("/asignaturas/add", methods=["GET", "POST"])
 def add_asignatura():
@@ -502,7 +505,7 @@ def add_asignatura():
     departamentos = asignaturas_crud.get_departamentos_asignatura(cursor)
     cursor.close()
     conn.close()
-    return render_template("asignatura_form.html", asignatura=None, departamentos=departamentos)
+    return render_template("cursos/asignatura_form.html", asignatura=None, departamentos=departamentos)
 
 
 @app.route("/asignaturas/edit/<int:idasignatura>", methods=["GET", "POST"])
@@ -542,7 +545,7 @@ def edit_asignatura(idasignatura):
     departamentos = asignaturas_crud.get_departamentos_asignatura(cursor)
     cursor.close()
     conn.close()
-    return render_template("asignatura_form.html", asignatura=asignatura, departamentos=departamentos)
+    return render_template("cursos/asignatura_form.html", asignatura=asignatura, departamentos=departamentos)
 
 @app.route("/asignaturas/delete/<int:idasignatura>", methods=["POST"])
 def delete_asignatura(idasignatura):
@@ -573,7 +576,7 @@ def list_tipobeca():
     tipos = tipobeca_crud.list_tipobeca(cursor)
     cursor.close()
     conn.close()
-    return render_template("tipobeca_list.html", tipos=tipos)
+    return render_template("finanzas_becas/tipobeca_list.html", tipos=tipos)
 
 @app.route("/tipobeca/add", methods=["GET", "POST"])
 def add_tipobeca():
@@ -593,7 +596,7 @@ def add_tipobeca():
             cursor.close()
             conn.close()
         return redirect(url_for("list_tipobeca"))
-    return render_template("tipobeca_form.html", tipo=None)
+    return render_template("finanzas_becas/tipobeca_form.html", tipo=None)
 
 @app.route("/tipobeca/edit/<int:idtipo>", methods=["GET", "POST"])
 def edit_tipobeca(idtipo):
@@ -621,7 +624,7 @@ def edit_tipobeca(idtipo):
     if not tipo:
         flash("Tipo de beca no encontrado.", "warning")
         return redirect(url_for("list_tipobeca"))
-    return render_template("tipobeca_form.html", tipo=tipo)
+    return render_template("finanzas_becas/tipobeca_form.html", tipo=tipo)
 
 @app.route("/tipobeca/delete/<int:idtipo>", methods=["POST"])
 def delete_tipobeca(idtipo):
@@ -651,7 +654,7 @@ def search_tipobeca():
     cursor.close()
     conn.close()
     flash(f'Resultados para "{query_term}".', "info")
-    return render_template("tipobeca_list.html", tipos=tipos)
+    return render_template("finanzas_becas/tipobeca_list.html", tipos=tipos)
 
 
 # --- Rutas para Beca ---
@@ -665,7 +668,7 @@ def list_becas():
     becas = becas_crud.list_becas(cursor)
     cursor.close()
     conn.close()
-    return render_template("beca_list.html", becas=becas)
+    return render_template("finanzas_becas/beca_list.html", becas=becas)
 
 @app.route("/becas/add", methods=["GET", "POST"])
 def add_beca():
@@ -696,7 +699,7 @@ def add_beca():
     tipos_beca = becas_crud.get_tipos_beca(cursor)
     cursor.close()
     conn.close()
-    return render_template("beca_form.html", beca=None, tipos_beca=tipos_beca)
+    return render_template("finanzas_becas/beca_form.html", beca=None, tipos_beca=tipos_beca)
 
 
 @app.route("/becas/edit/<int:idbeca>", methods=["GET", "POST"])
@@ -734,7 +737,7 @@ def edit_beca(idbeca):
     tipos_beca = becas_crud.get_tipos_beca(cursor)
     cursor.close()
     conn.close()
-    return render_template("beca_form.html", beca=beca, tipos_beca=tipos_beca)
+    return render_template("finanzas_becas/beca_form.html", beca=beca, tipos_beca=tipos_beca)
 
 @app.route("/becas/delete/<int:idbeca>", methods=["POST"])
 def delete_beca(idbeca):
@@ -767,7 +770,7 @@ def search_becas():
     cursor.close()
     conn.close()
     flash(f'Mostrando resultados para "{query_term}".', "info")
-    return render_template("beca_list.html", becas=becas)
+    return render_template("finanzas_becas/beca_list.html", becas=becas)
 
 
 # --- Rutas para Departamento de Asignatura ---
@@ -779,7 +782,7 @@ def list_departamentos_asignatura():
     departamentos = departamentoasignatura_crud.list_departamentos_asignatura(cursor)
     cursor.close()
     conn.close()
-    return render_template("departamentoasignatura_list.html", departamentos=departamentos)
+    return render_template("aulas_horarios/departamentoasignatura_list.html", departamentos=departamentos)
 
 @app.route("/departamentos_asignatura/add", methods=["GET", "POST"])
 def add_departamento_asignatura():
@@ -799,7 +802,7 @@ def add_departamento_asignatura():
             cursor.close()
             conn.close()
         return redirect(url_for("list_departamentos_asignatura"))
-    return render_template("departamentoasignatura_form.html", departamento=None)
+    return render_template("aulas_horarios/departamentoasignatura_form.html", departamento=None)
 
 @app.route("/departamentos_asignatura/edit/<int:iddep>", methods=["GET", "POST"])
 def edit_departamento_asignatura(iddep):
