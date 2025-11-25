@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ 'Editar' if tipo else 'Añadir' }} Tipo de Beca{% endblock %}
+
+{% block content %}
+<h1>{{ 'Editar' if tipo else 'Añadir' }} Tipo de Beca</h1>
+<hr>
+
+<form method="post">
+
+    {% if not tipo %}
+    <div class="mb-3">
+        <label class="form-label">ID Tipo</label>
+        <input type="number" class="form-control" name="idtipo_beca" required>
+    </div>
+    {% endif %}
+
+    <div class="mb-3">
+        <label class="form-label">Nombre del Tipo</label>
+        <input type="text" class="form-control" name="nombre_tipo"
+               value="{{ tipo.nombre_tipo if tipo else '' }}" required>
+    </div>
+
+    <button class="btn btn-primary">{{ 'Actualizar' if tipo else 'Guardar' }}</button>
+    <a class="btn btn-secondary" href="{{ url_for('list_tipobeca') }}">Cancelar</a>
+</form>
+{% endblock %}

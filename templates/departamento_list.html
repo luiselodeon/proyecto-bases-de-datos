@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block title %}Departamentos Académicos{% endblock %}
+
+{% block content %}
+ <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Departamentos Académicos</h1>
+    <a href="{{ url_for('add_departamento') }}" class="btn btn-primary">
+        Añadir Departamento
+    </a>
+</div>
+
+<form action="{{ url_for('search_departamentos') }}" method="get" class="mb-4">
+    <div class="input-group">
+        <input type="text" class="form-control" name="query"
+               placeholder="Buscar por nombre o ID de departamento...">
+        <button class="btn btn-outline-secondary" type="submit">Buscar</button>
+    </div>
+</form>
+
+
+    <div class="card">
+        <div class="card-header">Lista de Departamentos</div>
+        <div class="card-body">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>ID Departamento</th>
+                        <th>Nombre del Departamento</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for dep in departamentos %}
+                    <tr>
+                        <td>{{ dep.iddepartamentoacademico }}</td>
+                        <td>{{ dep.nombre_departamento }}</td>
+
+                        <td>
+                            <a href="{{ url_for('edit_departamento', iddep=dep.iddepartamentoacademico) }}"
+                               class="btn btn-sm btn-warning">
+                               Editar
+                            </a>
+
+                            <form action="{{ url_for('delete_departamento', iddep=dep.iddepartamentoacademico) }}"
+                                method="post" style="display:inline;">
+                                <button type="submit" class="btn btn-sm btn-danger"
+                                    onclick="return confirm('¿Eliminar departamento?');">
+                                    Eliminar
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="3" class="text-center">No hay departamentos registrados.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}
