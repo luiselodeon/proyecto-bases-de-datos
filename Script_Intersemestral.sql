@@ -271,12 +271,19 @@ CREATE TABLE IF NOT EXISTS `controlescolar_db`.`prerequisitos` (
   `idasignatura` INT(8) NOT NULL COMMENT 'Identificador de Asignatura',
   `asignatura_prerequisto` INT(8) NOT NULL COMMENT 'Prerequisito de Asignatura',
   PRIMARY KEY (`idasignatura`, `asignatura_prerequisto`),
-  CONSTRAINT `fk_idasignatura`
-    FOREIGN KEY ()
-    REFERENCES `controlescolar_db`.`asignatura` ()
+  CONSTRAINT `fk_idasignatura_prereq`
+    FOREIGN KEY (`idasignatura`)
+    REFERENCES `controlescolar_db`.`asignatura` (`idasignatura`)
     ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_prereq_asignatura`
+    FOREIGN KEY (`asignatura_prerequisto`)
+    REFERENCES `controlescolar_db`.`asignatura` (`idasignatura`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION
+)
 ENGINE = InnoDB;
+
 
 
 -- -----------------------------------------------------
@@ -303,7 +310,7 @@ CREATE TABLE IF NOT EXISTS `controlescolar_db`.`administrativo` (
   UNIQUE INDEX `idadministrativo_UNIQUE` (`idadministrativo` ASC) VISIBLE,
   UNIQUE INDEX `iddepartamento_rh_UNIQUE` (`iddepartamentorh` ASC) VISIBLE,
   UNIQUE INDEX `idpersonal_UNIQUE` (`idpersona` ASC) VISIBLE,
-  CONSTRAINT `fk_idpersona`
+  CONSTRAINT `fk_idpersona_administrativo`
     FOREIGN KEY (`idpersona`)
     REFERENCES `controlescolar_db`.`persona` (`idpersona`)
     ON DELETE NO ACTION
@@ -312,8 +319,10 @@ CREATE TABLE IF NOT EXISTS `controlescolar_db`.`administrativo` (
     FOREIGN KEY (`iddepartamentorh`)
     REFERENCES `controlescolar_db`.`departamentorh` (`iddepartamentorh`)
     ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
+    ON UPDATE NO ACTION
+)
 ENGINE = InnoDB;
+
 
 
 -- -----------------------------------------------------
@@ -331,7 +340,7 @@ ENGINE = InnoDB;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `controlescolar_db`.`prestamo` (
   `idprestamo` INT(8) NOT NULL COMMENT 'Folio de prestamo',
-  `idlibro` VARCHAR(45) NOT NULL COMMENT 'Identificador de libro',
+  `idlibro` INT NOT NULL COMMENT 'Identificador de libro',
   `idpersona` INT(8) NOT NULL,
   `fecha_prestamo` INT(8) NULL,
   `fechas_programda_entrega` INT(8) NULL,
@@ -342,17 +351,20 @@ CREATE TABLE IF NOT EXISTS `controlescolar_db`.`prestamo` (
   PRIMARY KEY (`idprestamo`),
   UNIQUE INDEX `idprestamo_UNIQUE` (`idprestamo` ASC) VISIBLE,
   INDEX `fk_idpersona_idx` (`idpersona` ASC) VISIBLE,
-  CONSTRAINT `fk_idlibro`
-    FOREIGN KEY ()
-    REFERENCES `controlescolar_db`.`libro` ()
+  CONSTRAINT `fk_idlibro_prestamo`
+    FOREIGN KEY (`idlibro`)
+    REFERENCES `controlescolar_db`.`libro` (`idlibro`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
-  CONSTRAINT `fk_idpersona`
+  CONSTRAINT `fk_idpersona_prestamo`
     FOREIGN KEY (`idpersona`)
     REFERENCES `controlescolar_db`.`persona` (`idpersona`)
     ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
+    ON UPDATE NO ACTION
+)
 ENGINE = InnoDB;
+
+
 
 
 -- -----------------------------------------------------
@@ -417,12 +429,15 @@ CREATE TABLE IF NOT EXISTS `controlescolar_db`.`docente` (
   PRIMARY KEY (`iddocente`),
   UNIQUE INDEX `iddocente_UNIQUE` (`iddocente` ASC) VISIBLE,
   INDEX `fk_idpersona_idx` (`idpersona` ASC) VISIBLE,
-  CONSTRAINT `fk_idpersona`
+
+  CONSTRAINT `fk_idpersona_docente`
     FOREIGN KEY (`idpersona`)
     REFERENCES `controlescolar_db`.`persona` (`idpersona`)
     ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
+    ON UPDATE NO ACTION
+)
 ENGINE = InnoDB;
+
 
 
 -- -----------------------------------------------------
@@ -469,41 +484,49 @@ CREATE TABLE IF NOT EXISTS `controlescolar_db`.`claseprogramada` (
   INDEX `fk_idhorario_idx` (`idhorario` ASC) VISIBLE,
   INDEX `fk_idcalendarioescolar_idx` (`idcalendarioescolar` ASC) VISIBLE,
   INDEX `fk_idaula_idx` (`idaula` ASC) VISIBLE,
-  CONSTRAINT `fk_idasignatura`
+
+  CONSTRAINT `fk_idasignatura_claseprogramada`
     FOREIGN KEY (`idasignatura`)
     REFERENCES `controlescolar_db`.`asignatura` (`idasignatura`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
+
   CONSTRAINT `fk_modalidadenseñanza`
     FOREIGN KEY (`idmodalidadenseñanza`)
     REFERENCES `controlescolar_db`.`modalidadenseñaza` (`idmodalidadenseñaza`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
+
   CONSTRAINT `fk_idhorario`
     FOREIGN KEY (`idhorario`)
     REFERENCES `controlescolar_db`.`horario` (`idhorario`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
-  CONSTRAINT `fk_iddocente`
-    FOREIGN KEY ()
-    REFERENCES `controlescolar_db`.`docente` ()
+
+  CONSTRAINT `fk_iddocente_claseprogramada`
+    FOREIGN KEY (`iddocente`)
+    REFERENCES `controlescolar_db`.`docente` (`iddocente`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
-  CONSTRAINT `fk_idperiodoinscripciones`
-    FOREIGN KEY ()
-    REFERENCES `controlescolar_db`.`periodoinscripciones` ()
+
+  CONSTRAINT `fk_idperiodoinscripciones_claseprogramada`
+    FOREIGN KEY (`idperiodoinscripciones`)
+    REFERENCES `controlescolar_db`.`periodoinscripciones` (`idperiodoinscripciones`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
+
   CONSTRAINT `fk_idcalendarioescolar`
     FOREIGN KEY (`idcalendarioescolar`)
     REFERENCES `controlescolar_db`.`calendarioescolar` (`idcalendarioescolar`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
+
   CONSTRAINT `fk_idaula`
     FOREIGN KEY (`idaula`)
     REFERENCES `controlescolar_db`.`aula` (`idaula`)
     ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
+    ON UPDATE NO ACTION
+)
 ENGINE = InnoDB;
 
 
@@ -633,6 +656,34 @@ CREATE TABLE IF NOT EXISTS `controlescolar_db`.`historialacademica` (
 ENGINE = InnoDB;
 
 
+-- Autenticacion (auth)
+CREATE TABLE IF NOT EXISTS `controlescolar_db`.`usuarios` (
+  `idusuario` INT(8) NOT NULL AUTO_INCREMENT,
+  `email` VARCHAR(100) NOT NULL,
+  `password` VARCHAR(255) NOT NULL,
+  `rol` ENUM(
+      'operacion_academica',
+      'finanzas_becas',
+      'admin'
+  ) NOT NULL DEFAULT 'operacion_academica',
+  PRIMARY KEY (`idusuario`),
+  UNIQUE INDEX `unique_email_idx` (`email` ASC) VISIBLE
+) ENGINE = InnoDB;
+
+
+-- Algunos ejemplos para ya tener hechos (se pueden borrar despues y que el usuario se registre)
+INSERT INTO `controlescolar_db`.`usuarios`
+(`email`, `password`, `rol`)
+VALUES
+  ('admin@admin.com', 'admin123', 'admin'),
+  ('academico@demo.com', 'academico123', 'operacion_academica'),
+  ('finanzas@demo.com', 'finanzas123', 'finanzas_becas');
+
+
+
+
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
+
+
