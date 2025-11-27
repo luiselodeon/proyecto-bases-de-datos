@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Editar' if estado else 'Crear' }} Estado de Cuenta{% endblock %}
+{% block content %}
+<h2>{{ 'Editar' if estado else 'Crear' }} Estado de Cuenta</h2>
+<form method="POST">
+    {% if not estado %}
+    <div class="mb-3">
+        <label for="saldo_inicial" class="form-label">Saldo Inicial</label>
+        <input type="number" step="0.01" min="0" class="form-control" id="saldo_inicial" name="saldo_inicial" required>
+    </div>
+    {% else %}
+    <div class="mb-3">
+        <label class="form-label">Saldo Inicial (no editable)</label>
+        <input type="text" class="form-control" value="${{ estado.saldo_inicial }}" disabled>
+    </div>
+    <div class="mb-3">
+        <label for="saldo_actual" class="form-label">Saldo Actual</label>
+        <input type="number" step="0.01" min="0" class="form-control" id="saldo_actual" name="saldo_actual"
+            value="{{ estado.saldo_actual }}" required>
+    </div>
+    {% endif %}
+    <div class="mb-3">
+        <label for="limite_credito" class="form-label">Límite de Crédito (opcional)</label>
+        <input type="number" step="0.01" min="0" class="form-control" id="limite_credito" name="limite_credito"
+            value="{{ estado.limite_credito if estado else '' }}">
+    </div>
+    <button type="submit" class="btn btn-success">Guardar</button>
+    <a href="{{ url_for('list_estados') }}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}

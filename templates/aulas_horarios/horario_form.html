@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{%block title %}{{ 'Editar' if horario else 'Añadir' }} Horario{% endblock %}
+{% block content %}
+<h2>{{ 'Editar' if horario else 'Añadir' }} Horario</h2>
+<form method="POST">
+    <div class="mb-3">
+        <label for="dia_semana" class="form-label">Día de la Semana</label>
+        <select class="form-select" id="dia_semana" name="dia_semana" required>
+            <option value="LUN" {% if horario and horario.dia_semana=='LUN' %}selected{% endif %}>Lunes</option>
+            <option value="MAR" {% if horario and horario.dia_semana=='MAR' %}selected{% endif %}>Martes</option>
+            <option value="MIE" {% if horario and horario.dia_semana=='MIE' %}selected{% endif %}>Miércoles</option>
+            <option value="JUE" {% if horario and horario.dia_semana=='JUE' %}selected{% endif %}>Jueves</option>
+            <option value="VIE" {% if horario and horario.dia_semana=='VIE' %}selected{% endif %}>Viernes</option>
+            <option value="SAB" {% if horario and horario.dia_semana=='SAB' %}selected{% endif %}>Sábado</option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <label for="hora_inicio" class="form-label">Hora Inicio</label>
+        <input type="time" class="form-control" id="hora_inicio" name="hora_inicio"
+            value="{{ horario.hora_inicio if horario else '' }}" required>
+    </div>
+    <div class="mb-3">
+        <label for="hora_fin" class="form-label">Hora Fin</label>
+        <input type="time" class="form-control" id="hora_fin" name="hora_fin"
+            value="{{ horario.hora_fin if horario else '' }}" required>
+    </div>
+    <div class="mb-3">
+        <label for="descripcion" class="form-label">Descripción</label>
+        <input type="text" class="form-control" id="descripcion" name="descripcion"
+            value="{{ horario.descripcion_horario if horario else '' }}">
+    </div>
+    <button type="submit" class="btn btn-success">Guardar</button>
+    <a href="{{ url_for('list_horarios') }}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}

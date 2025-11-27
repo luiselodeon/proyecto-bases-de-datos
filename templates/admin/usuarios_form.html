@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Editar' if usuario else 'Añadir' }} Usuario{% endblock %}
+{% block content %}
+<h2>{{ 'Editar' if usuario else 'Añadir' }} Usuario</h2>
+<form method="POST">
+    <div class="mb-3">
+        <label for="email" class="form-label">Email</label>
+        <input type="email" class="form-control" id="email" name="email" value="{{ usuario.email if usuario else '' }}"
+            required>
+    </div>
+    <div class="mb-3">
+        <label for="rol" class="form-label">Rol</label>
+        <select class="form-select" id="rol" name="rol" required>
+            <option value="operacion_academica" {% if usuario and usuario.rol=='operacion_academica' %}selected{% endif
+                %}>Operación Académica</option>
+            <option value="finanzas_becas" {% if usuario and usuario.rol=='finanzas_becas' %}selected{% endif %}>
+                Finanzas y Becas</option>
+            <option value="admin" {% if usuario and usuario.rol=='admin' %}selected{% endif %}>Administrador</option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <label for="password" class="form-label">Contraseña {% if usuario %}(dejar en blanco para no cambiar){% endif
+            %}</label>
+        <input type="password" class="form-control" id="password" name="password" {% if not usuario %}required{% endif
+            %}>
+    </div>
+    <button type="submit" class="btn btn-success">Guardar</button>
+    <a href="{{ url_for('list_usuarios') }}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}

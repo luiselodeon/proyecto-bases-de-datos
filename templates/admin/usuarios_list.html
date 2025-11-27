@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Usuarios{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Gestión de Perfiles (Usuarios)</h2>
+    <a href="{{ url_for('add_usuario') }}" class="btn btn-primary">Añadir Usuario</a>
+</div>
+<form action="{{ url_for('search_usuarios') }}" method="get" class="mb-3 d-flex">
+    <input type="text" name="query" class="form-control me-2" placeholder="Buscar...">
+    <button type="submit" class="btn btn-outline-success">Buscar</button>
+    <a href="{{ url_for('list_usuarios') }}" class="btn btn-outline-secondary ms-2">Limpiar</a>
+</form>
+<table class="table table-striped table-hover">
+    <thead class="table-dark">
+        <tr>
+            <th>ID</th>
+            <th>Email</th>
+            <th>Rol</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for u in usuarios %}
+        <tr>
+            <td>{{ u.idusuario }}</td>
+            <td>{{ u.email }}</td>
+            <td><span class="badge bg-primary">{{ u.rol }}</span></td>
+            <td>
+                <a href="{{ url_for('edit_usuario', idusuario=u.idusuario) }}" class="btn btn-sm btn-warning">Editar</a>
+                <form action="{{ url_for('delete_usuario', idusuario=u.idusuario) }}" method="POST"
+                    style="display:inline;" onsubmit="return confirm('¿Eliminar?');">
+                    <button type="submit" class="btn btn-sm btn-danger">Eliminar</button>
+                </form>
+            </td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="4" class="text-center">No hay usuarios.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

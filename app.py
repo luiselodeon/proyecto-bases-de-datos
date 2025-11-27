@@ -12,11 +12,12 @@ from utils.auth import login_required, role_required
 from utils.db import get_db_connection
 from utils.estudiantes import students_crud, historialacademico_crud, inscripcion_crud
 from utils.cursos import carreras_crud, asignaturas_crud, periodoinscripciones_crud, prerequisito_crud
-from utils.aulas_horarios import departamentos_crud, departamentoasignatura_crud
+from utils.aulas_horarios import departamentos_crud, departamentoasignatura_crud, aula_crud, horario_crud
 from utils.docentes import docente_crud, claseprogramada_crud, capacitacion_crud
 from utils.calificaciones import calificacion_estudiante_crud, evaluacion_crud
-from utils.finanzas_becas import becas_crud, tipobeca_crud
+from utils.finanzas_becas import becas_crud, tipobeca_crud, pago_crud, estadodecuenta_crud
 from utils.asistencia import asistencia_crud
+from utils.admin import usuarios_crud
 
 # --- CONFIGURACIÓN ---
 load_dotenv()
@@ -1873,6 +1874,449 @@ def search_asistencias():
     conn.close()
     flash(f'Resultados para "{query_term}".', "info")
     return render_template("asistencia/asistencia_list.html", asistencias=asistencias)
+
+
+# --- Rutas para Aulas ---
+
+@app.route("/aulas")
+def list_aulas():
+    conn = get_db_connection()
+    if conn is None:
+        return render_template("aulas_horarios/aula_list.html", aulas=[])
+    cursor = conn.cursor(dictionary=True)
+    aulas = aula_crud.list_aulas(cursor)
+    cursor.close()
+    conn.close()
+    return render_template("aulas_horarios/aula_list.html", aulas=aulas)
+
+@app.route("/aulas/add", methods=["GET", "POST"])
+def add_aula():
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_aulas"))
+    cursor = conn.cursor()
+    if request.method == "POST":
+        desc = request.form["descripcion"]
+        lugar = request.form.get("lugar") or None
+        capacidad = request.form["capacidad"]
+        try:
+            aula_crud.add_aula(cursor, desc, lugar, capacidad)
+            conn.commit()
+            flash("Aula añadida correctamente.", "success")
+        except mysql.connector.Error as err:
+            conn.rollback()
+            flash(f"Error: {err}", "danger")
+        finally:
+            cursor.close()
+            conn.close()
+        return redirect(url_for("list_aulas"))
+    cursor.close()
+    conn.close()
+    return render_template("aulas_horarios/aula_form.html", aula=None)
+
+@app.route("/aulas/edit/<int:idaula>", methods=["GET", "POST"])
+def edit_aula(idaula):
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_aulas"))
+    cursor = conn.cursor(dictionary=True)
+    if request.method == "POST":
+        desc = request.form["descripcion"]
+        lugar = request.form.get("lugar") or None
+        capacidad = request.form["capacidad"]
+        try:
+            aula_crud.update_aula(cursor, idaula, desc, lugar, capacidad)
+            conn.commit()
+            flash("Aula actualizada correctamente.", "success")
+        except mysql.connector.Error as err:
+            conn.rollback()
+            flash(f"Error: {err}", "danger")
+        finally:
+            cursor.close()
+            conn.close()
+        return redirect(url_for("list_aulas"))
+    aula = aula_crud.get_aula(cursor, idaula)
+    cursor.close()
+    conn.close()
+    if not aula:
+        flash("Aula no encontrada.", "warning")
+        return redirect(url_for("list_aulas"))
+    return render_template("aulas_horarios/aula_form.html", aula=aula)
+
+@app.route("/aulas/delete/<int:idaula>", methods=["POST"])
+def delete_aula(idaula):
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_aulas"))
+    cursor = conn.cursor()
+    try:
+        aula_crud.delete_aula(cursor, idaula)
+        conn.commit()
+        flash("Aula eliminada correctamente.", "success")
+    except mysql.connector.Error as err:
+        conn.rollback()
+        flash(f"Error: {err}", "danger")
+    finally:
+        cursor.close()
+        conn.close()
+    return redirect(url_for("list_aulas"))
+
+@app.route("/aulas/search")
+def search_aulas():
+    query_term = request.args.get("query", "").strip()
+    if not query_term:
+        return redirect(url_for("list_aulas"))
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_aulas"))
+    cursor = conn.cursor(dictionary=True)
+    aulas = aula_crud.search_aulas(cursor, query_term)
+    cursor.close()
+    conn.close()
+    flash(f'Resultados para "{query_term}".', "info")
+    return render_template("aulas_horarios/aula_list.html", aulas=aulas)
+
+
+# --- Rutas para Horarios ---
+
+@app.route("/horarios")
+def list_horarios():
+    conn = get_db_connection()
+    if conn is None:
+        return render_template("aulas_horarios/horario_list.html", horarios=[])
+    cursor = conn.cursor(dictionary=True)
+    horarios = horario_crud.list_horarios(cursor)
+    cursor.close()
+    conn.close()
+    return render_template("aulas_horarios/horario_list.html", horarios=horarios)
+
+@app.route("/horarios/add", methods=["GET", "POST"])
+def add_horario():
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_horarios"))
+    cursor = conn.cursor()
+    if request.method == "POST":
+        dia = request.form["dia_semana"]
+        inicio = request.form["hora_inicio"]
+        fin = request.form["hora_fin"]
+        desc = request.form.get("descripcion") or None
+        try:
+            horario_crud.add_horario(cursor, dia, inicio, fin, desc)
+            conn.commit()
+            flash("Horario añadido correctamente.", "success")
+        except mysql.connector.Error as err:
+            conn.rollback()
+            flash(f"Error: {err}", "danger")
+        finally:
+            cursor.close()
+            conn.close()
+        return redirect(url_for("list_horarios"))
+    cursor.close()
+    conn.close()
+    return render_template("aulas_horarios/horario_form.html", horario=None)
+
+@app.route("/horarios/edit/<int:idhorario>", methods=["GET", "POST"])
+def edit_horario(idhorario):
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_horarios"))
+    cursor = conn.cursor(dictionary=True)
+    if request.method == "POST":
+        dia = request.form["dia_semana"]
+        inicio = request.form["hora_inicio"]
+        fin = request.form["hora_fin"]
+        desc = request.form.get("descripcion") or None
+        try:
+            horario_crud.update_horario(cursor, idhorario, dia, inicio, fin, desc)
+            conn.commit()
+            flash("Horario actualizado correctamente.", "success")
+        except mysql.connector.Error as err:
+            conn.rollback()
+            flash(f"Error: {err}", "danger")
+        finally:
+            cursor.close()
+            conn.close()
+        return redirect(url_for("list_horarios"))
+    horario = horario_crud.get_horario(cursor, idhorario)
+    cursor.close()
+    conn.close()
+    if not horario:
+        flash("Horario no encontrado.", "warning")
+        return redirect(url_for("list_horarios"))
+    return render_template("aulas_horarios/horario_form.html", horario=horario)
+
+@app.route("/horarios/delete/<int:idhorario>", methods=["POST"])
+def delete_horario(idhorario):
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_horarios"))
+    cursor = conn.cursor()
+    try:
+        horario_crud.delete_horario(cursor, idhorario)
+        conn.commit()
+        flash("Horario eliminado correctamente.", "success")
+    except mysql.connector.Error as err:
+        conn.rollback()
+        flash(f"Error: {err}", "danger")
+    finally:
+        cursor.close()
+        conn.close()
+    return redirect(url_for("list_horarios"))
+
+@app.route("/horarios/search")
+def search_horarios():
+    query_term = request.args.get("query", "").strip()
+    if not query_term:
+        return redirect(url_for("list_horarios"))
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_horarios"))
+    cursor = conn.cursor(dictionary=True)
+    horarios = horario_crud.search_horarios(cursor, query_term)
+    cursor.close()
+    conn.close()
+    flash(f'Resultados para "{query_term}".', "info")
+    return render_template("aulas_horarios/horario_list.html", horarios=horarios)
+
+
+# --- Rutas para Pagos ---
+
+@app.route("/pagos")
+def list_pagos():
+    conn = get_db_connection()
+    if conn is None:
+        return render_template("finanzas_becas/pago_list.html", pagos=[])
+    cursor = conn.cursor(dictionary=True)
+    pagos = pago_crud.list_pagos(cursor)
+    cursor.close()
+    conn.close()
+    return render_template("finanzas_becas/pago_list.html", pagos=pagos)
+
+@app.route("/pagos/add", methods=["GET", "POST"])
+def add_pago():
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_pagos"))
+    cursor = conn.cursor(dictionary=True)
+    if request.method == "POST":
+        idestado = request.form["idestadodecuenta"]
+        monto = request.form["monto"]
+        try:
+            pago_crud.registrar_pago(cursor, idestado, monto)
+            conn.commit()
+            flash("Pago registrado correctamente.", "success")
+        except mysql.connector.Error as err:
+            conn.rollback()
+            flash(f"Error: {err}", "danger")
+        finally:
+            cursor.close()
+            conn.close()
+        return redirect(url_for("list_pagos"))
+    estudiantes = pago_crud.get_estudiantes_con_saldo(cursor)
+    cursor.close()
+    conn.close()
+    return render_template("finanzas_becas/pago_form.html", estudiantes=estudiantes)
+
+
+# --- Rutas para Estados de Cuenta ---
+
+@app.route("/estados")
+def list_estados():
+    conn = get_db_connection()
+    if conn is None:
+        return render_template("finanzas_becas/estadodecuenta_list.html", estados=[])
+    cursor = conn.cursor(dictionary=True)
+    estados = estadodecuenta_crud.list_estados(cursor)
+    cursor.close()
+    conn.close()
+    return render_template("finanzas_becas/estadodecuenta_list.html", estados=estados)
+
+@app.route("/estados/add", methods=["GET", "POST"])
+def add_estado():
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_estados"))
+    cursor = conn.cursor()
+    if request.method == "POST":
+        saldo_inicial = request.form["saldo_inicial"]
+        limite = request.form.get("limite_credito") or None
+        try:
+            estadodecuenta_crud.add_estado(cursor, saldo_inicial, limite)
+            conn.commit()
+            flash("Estado de cuenta creado correctamente.", "success")
+        except mysql.connector.Error as err:
+            conn.rollback()
+            flash(f"Error: {err}", "danger")
+        finally:
+            cursor.close()
+            conn.close()
+        return redirect(url_for("list_estados"))
+    cursor.close()
+    conn.close()
+    return render_template("finanzas_becas/estadodecuenta_form.html", estado=None)
+
+@app.route("/estados/edit/<int:idestado>", methods=["GET", "POST"])
+def edit_estado(idestado):
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_estados"))
+    cursor = conn.cursor(dictionary=True)
+    if request.method == "POST":
+        saldo_actual = request.form["saldo_actual"]
+        limite = request.form.get("limite_credito") or None
+        try:
+            estadodecuenta_crud.update_estado(cursor, idestado, saldo_actual, limite)
+            conn.commit()
+            flash("Estado de cuenta actualizado correctamente.", "success")
+        except mysql.connector.Error as err:
+            conn.rollback()
+            flash(f"Error: {err}", "danger")
+        finally:
+            cursor.close()
+            conn.close()
+        return redirect(url_for("list_estados"))
+    estado = estadodecuenta_crud.get_estado(cursor, idestado)
+    cursor.close()
+    conn.close()
+    if not estado:
+        flash("Estado de cuenta no encontrado.", "warning")
+        return redirect(url_for("list_estados"))
+    return render_template("finanzas_becas/estadodecuenta_form.html", estado=estado)
+
+@app.route("/estados/delete/<int:idestado>", methods=["POST"])
+def delete_estado(idestado):
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_estados"))
+    cursor = conn.cursor()
+    try:
+        estadodecuenta_crud.delete_estado(cursor, idestado)
+        conn.commit()
+        flash("Estado de cuenta eliminado correctamente.", "success")
+    except mysql.connector.Error as err:
+        conn.rollback()
+        flash(f"Error: {err}", "danger")
+    finally:
+        cursor.close()
+        conn.close()
+    return redirect(url_for("list_estados"))
+
+@app.route("/estados/search")
+def search_estados():
+    query_term = request.args.get("query", "").strip()
+    if not query_term:
+        return redirect(url_for("list_estados"))
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_estados"))
+    cursor = conn.cursor(dictionary=True)
+    estados = estadodecuenta_crud.search_estados(cursor, query_term)
+    cursor.close()
+    conn.close()
+    flash(f'Resultados para "{query_term}".', "info")
+    return render_template("finanzas_becas/estadodecuenta_list.html", estados=estados)
+
+
+# --- Rutas para Usuarios ---
+
+@app.route("/usuarios")
+def list_usuarios():
+    conn = get_db_connection()
+    if conn is None:
+        return render_template("admin/usuarios_list.html", usuarios=[])
+    cursor = conn.cursor(dictionary=True)
+    usuarios = usuarios_crud.list_usuarios(cursor)
+    cursor.close()
+    conn.close()
+    return render_template("admin/usuarios_list.html", usuarios=usuarios)
+
+@app.route("/usuarios/add", methods=["GET", "POST"])
+def add_usuario():
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_usuarios"))
+    cursor = conn.cursor()
+    if request.method == "POST":
+        email = request.form["email"]
+        password = request.form["password"]
+        rol = request.form["rol"]
+        try:
+            usuarios_crud.add_usuario(cursor, email, password, rol)
+            conn.commit()
+            flash("Usuario añadido correctamente.", "success")
+        except mysql.connector.Error as err:
+            conn.rollback()
+            flash(f"Error: {err}", "danger")
+        finally:
+            cursor.close()
+            conn.close()
+        return redirect(url_for("list_usuarios"))
+    cursor.close()
+    conn.close()
+    return render_template("admin/usuarios_form.html", usuario=None)
+
+@app.route("/usuarios/edit/<int:idusuario>", methods=["GET", "POST"])
+def edit_usuario(idusuario):
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_usuarios"))
+    cursor = conn.cursor(dictionary=True)
+    if request.method == "POST":
+        email = request.form["email"]
+        rol = request.form["rol"]
+        password = request.form.get("password") or None
+        try:
+            usuarios_crud.update_usuario(cursor, idusuario, email, rol, password)
+            conn.commit()
+            flash("Usuario actualizado correctamente.", "success")
+        except mysql.connector.Error as err:
+            conn.rollback()
+            flash(f"Error: {err}", "danger")
+        finally:
+            cursor.close()
+            conn.close()
+        return redirect(url_for("list_usuarios"))
+    usuario = usuarios_crud.get_usuario(cursor, idusuario)
+    cursor.close()
+    conn.close()
+    if not usuario:
+        flash("Usuario no encontrado.", "warning")
+        return redirect(url_for("list_usuarios"))
+    return render_template("admin/usuarios_form.html", usuario=usuario)
+
+@app.route("/usuarios/delete/<int:idusuario>", methods=["POST"])
+def delete_usuario(idusuario):
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_usuarios"))
+    cursor = conn.cursor()
+    try:
+        usuarios_crud.delete_usuario(cursor, idusuario)
+        conn.commit()
+        flash("Usuario eliminado correctamente.", "success")
+    except mysql.connector.Error as err:
+        conn.rollback()
+        flash(f"Error: {err}", "danger")
+    finally:
+        cursor.close()
+        conn.close()
+    return redirect(url_for("list_usuarios"))
+
+@app.route("/usuarios/search")
+def search_usuarios():
+    query_term = request.args.get("query", "").strip()
+    if not query_term:
+        return redirect(url_for("list_usuarios"))
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_usuarios"))
+    cursor = conn.cursor(dictionary=True)
+    usuarios = usuarios_crud.search_usuarios(cursor, query_term)
+    cursor.close()
+    conn.close()
+    flash(f'Resultados para "{query_term}".', "info")
+    return render_template("admin/usuarios_list.html", usuarios=usuarios)
 
 
 # --- Iniciar la Aplicación ---

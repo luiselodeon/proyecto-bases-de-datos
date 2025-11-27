@@ -96,10 +96,8 @@
               <li><a class="dropdown-item" href="{{ url_for('list_departamentos') }}">Departamentos Académicos</a></li>
               <li><a class="dropdown-item" href="{{ url_for('list_departamentos_asignatura') }}">Departamentos de
                   Asignatura</a></li>
-              <li><a class="dropdown-item" href="{{ url_for('placeholder', section='asignacion_aulas') }}">Asignación de
-                  Aulas</a></li>
-              <li><a class="dropdown-item" href="{{ url_for('placeholder', section='gestion_horarios') }}">Gestión de
-                  Horarios</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('list_aulas') }}">Asignación de Aulas</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('list_horarios') }}">Gestión de Horarios</a></li>
               <li><a class="dropdown-item" href="{{ url_for('placeholder', section='recursos') }}">Gestión de
                   Recursos</a></li>
             </ul>
@@ -115,10 +113,8 @@
             <ul class="dropdown-menu">
               <li><a class="dropdown-item" href="{{ url_for('list_becas') }}">Becas</a></li>
               <li><a class="dropdown-item" href="{{ url_for('list_tipobeca') }}">Tipos de Beca</a></li>
-              <li><a class="dropdown-item" href="{{ url_for('placeholder', section='pagos') }}">Administración de
-                  Pagos</a></li>
-              <li><a class="dropdown-item" href="{{ url_for('placeholder', section='estados_cuenta') }}">Estados de
-                  Cuenta</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('list_pagos') }}">Administración de Pagos</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('list_estados') }}">Estados de Cuenta</a></li>
             </ul>
           </li>
           {% endif %}
@@ -134,8 +130,7 @@
               Usuarios
             </a>
             <ul class="dropdown-menu">
-              <li><a class="dropdown-item" href="{{ url_for('placeholder', section='gestion_perfiles') }}">Gestión de
-                  Perfiles</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('list_usuarios') }}">Gestión de Perfiles</a></li>
             </ul>
           </li>
           {% endif %}

@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Editar' if aula else 'Añadir' }} Aula{% endblock %}
+{% block content %}
+<h2>{{ 'Editar' if aula else 'Añadir' }} Aula</h2>
+<form method="POST">
+    <div class="mb-3">
+        <label for="descripcion" class="form-label">Descripción</label>
+        <input type="text" class="form-control" id="descripcion" name="descripcion"
+            value="{{ aula.descripcion_aula if aula else '' }}" required>
+    </div>
+    <div class="mb-3">
+        <label for="lugar" class="form-label">Lugar Físico</label>
+        <input type="text" class="form-control" id="lugar" name="lugar" value="{{ aula.lugar_fisico if aula else '' }}">
+    </div>
+    <div class="mb-3">
+        <label for="capacidad" class="form-label">Capacidad</label>
+        <input type="number" min="1" class="form-control" id="capacidad" name="capacidad"
+            value="{{ aula.capacidad if aula else '' }}" required>
+    </div>
+    <button type="submit" class="btn btn-success">Guardar</button>
+    <a href="{{ url_for('list_aulas') }}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}
