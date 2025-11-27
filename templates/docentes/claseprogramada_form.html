@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Editar' if clase else 'Añadir' }} Clase Programada{% endblock %}
+{% block content %}
+<h2>{{ 'Editar' if clase else 'Añadir'}} Clase Programada</h2>
+<form method="POST">
+    <div class="mb-3">
+        <label for="idasignatura" class="form-label">Asignatura</label>
+        <select class="form-select" id="idasignatura" name="idasignatura" required>
+            <option value="">Seleccione asignatura</option>
+            {% for a in asignaturas %}
+            <option value="{{ a.idasignatura }}" {% if clase and clase.idasignatura==a.idasignatura %}selected{% endif
+                %}>{{ a.nombre_asignatura }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="mb-3">
+        <label for="iddocente" class="form-label">Docente</label>
+        <select class="form-select" id="iddocente" name="iddocente" required>
+            <option value="">Seleccione docente</option>
+            {% for d in docentes %}
+            <option value="{{ d.iddocente }}" {% if clase and clase.iddocente==d.iddocente %}selected{% endif %}>{{
+                d.nombre_completo }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="mb-3">
+        <label for="idperiodo" class="form-label">Periodo</label>
+        <select class="form-select" id="idperiodo" name="idperiodo" required>
+            <option value="">Seleccione periodo</option>
+            {% for p in periodos %}
+            <option value="{{ p.idperiodoinscripciones }}" {% if clase and
+                clase.idperiodoinscripciones==p.idperiodoinscripciones %}selected{% endif %}>{{ p.descripcion_periodo }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="mb-3">
+        <label for="idhorario" class="form-label">Horario</label>
+        <select class="form-select" id="idhorario" name="idhorario" required>
+            <option value="">Seleccione horario</option>
+            {% for h in horarios %}
+            <option value="{{ h.idhorario }}" {% if clase and clase.idhorario==h.idhorario %}selected{% endif %}>{{
+                h.descripcion }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="mb-3">
+        <label for="idcalendario" class="form-label">Calendario Escolar</label>
+        <select class="form-select" id="idcalendario" name="idcalendario" required>
+            <option value="">Seleccione calendario </option>
+            {% for c in calendarios %}
+            <option value="{{ c.idcalendarioescolar }}" {% if clase and clase.idcalendarioescolar==c.idcalendarioescolar
+                %}selected{% endif %}>{{ c.descripcion }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="mb-3">
+        <label for="modalidad" class="form-label">Modalidad</label>
+        <select class="form-select" id="modalidad" name="modalidad" required>
+            <option value="PRESENCIAL" {% if clase and clase.modalidad=='PRESENCIAL' %}selected{% endif %}>Presencial
+            </option>
+            <option value="EN_LINEA" {% if clase and clase.modalidad=='EN_LINEA' %}selected{% endif %}>En Línea</option>
+            <option value="HIBRIDA" {% if clase and clase.modalidad=='HIBRIDA' %}selected{% endif %}>Híbrida</option>
+            <option value="MULTISEDE" {% if clase and clase.modalidad=='MULTISEDE' %}selected{% endif %}>Multisede
+            </option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <label for="idioma" class="form-label">Idioma</label>
+        <select class="form-select" id="idioma" name="idioma" required>
+            <option value="ESP" {% if clase and clase.idioma=='ESP' %}selected{% endif %}>Español</option>
+            <option value="ING" {% if clase and clase.idioma=='ING' %}selected{% endif %}>Inglés</option>
+            <option value="FRA" {% if clase and clase.idioma=='FRA' %}selected{% endif %}>Francés</option>
+        </select>
+    </div>
+    <button type="submit" class="btn btn-success">Guardar</button>
+    <a href="{{ url_for('list_clases') }}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}

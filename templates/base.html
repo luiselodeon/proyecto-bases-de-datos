@@ -30,10 +30,8 @@
             </a>
             <ul class="dropdown-menu">
               <li><a class="dropdown-item" href="{{ url_for('index') }}">Registro y Consulta</a></li>
-              <li><a class="dropdown-item" href="{{ url_for('placeholder', section='historial_academico') }}">Historial
-                  Académico</a></li>
-              <li><a class="dropdown-item"
-                  href="{{ url_for('placeholder', section='inscripciones') }}">Inscripciones</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('list_historial') }}">Historial Académico</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('list_inscripciones') }}">Inscripciones</a></li>
             </ul>
           </li>
 
@@ -43,10 +41,8 @@
               Gestión de Docentes
             </a>
             <ul class="dropdown-menu">
-              <li><a class="dropdown-item" href="{{ url_for('placeholder', section='info_docente') }}">Administración
-                  Personal</a></li>
-              <li><a class="dropdown-item" href="{{ url_for('placeholder', section='asignacion_cursos') }}">Asignación a
-                  Cursos</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('list_docentes') }}">Administración Personal</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('list_clases') }}">Asignación a Cursos</a></li>
               <li><a class="dropdown-item" href="{{ url_for('placeholder', section='capacitacion') }}">Capacitación y
                   Evaluaciones</a></li>
             </ul>
@@ -60,6 +56,7 @@
             <ul class="dropdown-menu">
               <li><a class="dropdown-item" href="{{ url_for('list_carreras') }}">Planes de Estudio (Carreras)</a></li>
               <li><a class="dropdown-item" href="{{ url_for('list_asignaturas') }}">Asignaturas</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('list_periodos') }}">Periodos de Inscripción</a></li>
               <li><a class="dropdown-item" href="{{ url_for('placeholder', section='requisitos') }}">Requisitos
                   Programa</a></li>
             </ul>
@@ -175,7 +172,7 @@
     <!-- Mostrar mensajes flash (alertas) -->
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
-    {% for category, message in messages %}
+    {% for category, message in messages %}\
     <div class="alert alert-{{ category }} alert-dismissible fade show mb-3" role="alert">
       {{ message }}
       <button type="button" class="btn-close" data-bs-dismiss="alert"></button>

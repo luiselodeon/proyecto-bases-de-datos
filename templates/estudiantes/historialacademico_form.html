@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ 'Editar' if historial else 'Añadir' }} Historial{% endblock %}
+
+{% block content %}
+<h2>{{ 'Editar' if historial else 'Añadir' }} Historial Académico</h2>
+
+<form method="POST">
+    <div class="mb-3">
+        <label for="matricula_alumno" class="form-label">Estudiante</label>
+        <select class="form-select" id="matricula_alumno" name="matricula_alumno" required {{ 'disabled' if historial
+            else '' }}>
+            <option value="">Seleccione estudiante</option>
+            {% for est in estudiantes %}
+            <option value="{{ est.matricula_alumno }}" {% if historial and
+                historial.matricula_alumno==est.matricula_alumno %}selected{% endif %}>{{ est.nombre_completo }}
+            </option>
+            {% endfor %}
+        </select>
+        {% if historial %}<input type="hidden" name="matricula_alumno" value="{{ historial.matricula_alumno }}">{% endif
+        %}
+    </div>
+
+    <div class="mb-3">
+        <label for="idasignatura" class="form-label">Asignatura</label>
+        <select class="form-select" id="idasignatura" name="idasignatura" required {{ 'disabled' if historial else ''
+            }}>
+            <option value="">Seleccione asignatura</option>
+            {% for asig in asignaturas %}
+            <option value="{{ asig.idasignatura }}" {% if historial and historial.idasignatura==asig.idasignatura
+                %}selected{% endif %}>{{ asig.nombre_asignatura }}</option>
+            {% endfor %}
+        </select>
+        {% if historial %}<input type="hidden" name="idasignatura" value="{{ historial.idasignatura }}">{% endif %}
+    </div>
+
+    <div class="mb-3">
+        <label for="idperiodo" class="form-label">Periodo</label>
+        <select class="form-select" id="idperiodo" name="idperiodo" required {{ 'disabled' if historial else '' }}>
+            <option value="">Seleccione periodo</option>
+            {% for per in periodos %}
+            <option value="{{ per.idperiodoinscripciones }}" {% if historial and historial.idperiodo==per.idperiodoinsc
+                ripciones %}selected{% endif %}>{{ per.descripcion_periodo }}</option>
+            {% endfor %}
+        </select>
+        {% if historial %}<input type="hidden" name="idperiodo" value="{{ historial.idperiodo }}">{% endif %}
+    </div>
+
+    <div class="mb-3">
+        <label for="calificacion_final" class="form-label">Calificación (0-10)</label>
+        <input type="number" step="0.01" min="0" max="10" class="form-control" id="calificacion_final"
+            name="calificacion_final" value="{{ historial.calificacion_final if historial else '' }}">
+    </div>
+
+    <div class="mb-3">
+        <label for="estatus_asignatura" class="form-label">Estatus</label>
+        <select class="form-select" id="estatus_asignatura" name="estatus_asignatura" required>
+            <option value="CURSANDO" {% if historial and historial.estatus_asignatura=='CURSANDO' %}selected{% endif %}>
+                Cursando</option>
+            <option value="APROBADA" {% if historial and historial.estatus_asignatura=='APROBADA' %}selected{% endif %}>
+                Aprobada</option>
+            <option value="REPROBADA" {% if historial and historial.estatus_asignatura=='REPROBADA' %}selected{% endif
+                %}>Reprobada</option>
+        </select>
+    </div>
+
+    <button type="submit" class="btn btn-success">Guardar</button>
+    <a href="{{ url_for('list_historial') }}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}

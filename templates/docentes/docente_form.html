@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ 'Editar' if docente else 'Añadir' }} Docente{% endblock %}
+
+{% block content %}
+<h2>{{ 'Editar' if docente else 'Añadir' }} Docente</h2>
+
+<form method="POST">
+    <div class="mb-3">
+        <label for="idpersona" class="form-label">Persona</label>
+        <select class="form-select" id="idpersona" name="idpersona" required {{ 'disabled' if docente else '' }}>
+            <option value="">Seleccione una persona</option>
+            {% for persona in personas %}
+            <option value="{{ persona.idpersona }}" {% if docente and docente.idpersona==persona.idpersona %}selected{%
+                endif %}>
+                {{ persona.nombre_completo }}
+            </option>
+            {% endfor %}
+        </select>
+        {% if docente %}
+        <input type="hidden" name="idpersona" value="{{ docente.idpersona }}">
+        {% endif %}
+    </div>
+
+    <div class="mb-3">
+        <label for="fecha_alta" class="form-label">Fecha de Alta</label>
+        <input type="date" class="form-control" id="fecha_alta" name="fecha_alta"
+            value="{{ docente.fecha_alta if docente else '' }}" required>
+    </div>
+
+    <div class="mb-3">
+        <label for="fecha_baja" class="form-label">Fecha de Baja (opcional)</label>
+        <input type="date" class="form-control" id="fecha_baja" name="fecha_baja"
+            value="{{ docente.fecha_baja if docente and docente.fecha_baja else '' }}">
+    </div>
+
+    <div class="mb-3">
+        <label for="estatus" class="form-label">Estatus</label>
+        <select class="form-select" id="estatus" name="estatus" required>
+            <option value="A" {% if docente and docente.estatus=='A' %}selected{% endif %}>Activo</option>
+            <option value="B" {% if docente and docente.estatus=='B' %}selected{% endif %}>Baja</option>
+        </select>
+    </div>
+
+    <button type="submit" class="btn btn-success">Guardar</button>
+    <a href="{{ url_for('list_docentes') }}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}

@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Editar' if inscripcion else 'Añadir' }} Inscripción{% endblock %}
+{% block content %}
+<h2>{{ 'Editar' if inscripcion else 'Añadir' }} Inscripción</h2>
+<form method="POST">
+    <div class="mb-3">
+        <label for="matricula_alumno" class="form-label">Estudiante</label>
+        <select class="form-select" id="matricula_alumno" name="matricula_alumno" required {{ 'disabled' if inscripcion
+            else '' }}>
+            <option value="">Seleccione estudiante</option>
+            {% for est in estimudiantes %}
+            <option value="{{ est.matricula_alumno }}" {% if inscripcion and
+                inscripcion.matricula_alumno==est.matricula_alumno %}selected{% endif %}>{{ est.nombre_completo }}
+            </option>
+            {% endfor %}
+        </select>
+        {% if inscripcion %}<input type="hidden" name="matricula_alumno" value="{{ inscripcion.matricula_alumno }}">{%
+        endif %}
+    </div>
+    <div class="mb-3">
+        <label for="idperiodo" class="form-label">Periodo</label>
+        <select class="form-select" id="idperiodo" name="idperiodo" required {{ 'disabled' if inscripcion else '' }}>
+            <option value="">Seleccione periodo</option>
+            {% for p in periodos %}
+            <option value="{{ p.idperiodoinscripciones }}" {% if inscripcion and
+                inscripcion.idperiodoinscripciones==p.idperiodoinscripciones %}selected{% endif %}>{{
+                p.descripcion_periodo }}</option>
+            {% endfor %}
+        </select>
+        {% if inscripcion %}<input type="hidden" name="idperiodo" value="{{ inscripcion.idperiodoinscripciones }}">{%
+        endif %}
+    </div>
+    <div class="mb-3">
+        <label for="fecha_inscripcion" class="form-label">Fecha Inscripción</label>
+        <input type="date" class="form-control" id="fecha_inscripcion" name="fecha_inscripcion"
+            value="{{ inscripcion.fecha_inscripcion if inscripcion else '' }}" required>
+    </div>
+    <div class="mb-3">
+        <label for="motivo_inscripcion" class="form-label">Motivo (opcional)</label>
+        <textarea class="form-control" id="motivo_inscripcion" name="motivo_inscripcion"
+            rows="2">{{ inscripcion.motivo_inscripcion if inscripcion else '' }}</textarea>
+    </div>
+    <div class="mb-3">
+        <label for="estatus" class="form-label">Estatus</label>
+        <select class="form-select" id="estatus" name="estatus" required>
+            <option value="INICIADA" {% if inscripcion and inscripcion.estatus=='INICIADA' %}selected{% endif %}>
+                Iniciada</option>
+            <option value="EN_PROCESO" {% if inscripcion and inscripcion.estatus=='EN_PROCESO' %}selected{% endif %}>En
+                Proceso</option>
+            <option value="CONCLUIDA" {% if inscripcion and inscripcion.estatus=='CONCLUIDA' %}selected{% endif %}>
+                Concluida</option>
+            <option value="CANCELADA" {% if inscripcion and inscripcion.estatus=='CANCELADA' %}selected{% endif %}>
+                Cancelada</option>
+        </select>
+    </div>
+    <button type="submit" class="btn btn-success">Guardar</button>
+    <a href="{{ url_for('list_inscripciones') }}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}

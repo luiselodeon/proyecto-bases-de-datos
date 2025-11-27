@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Editar' if periodo else 'Añadir' }} Periodo{% endblock %}
+{% block content %}
+<h2>{{ 'Editar' if periodo else 'Añadir' }} Periodo de Inscripción</h2>
+<form method="POST">
+    <div class="mb-3">
+        <label for="descripcion_periodo" class="form-label">Descripción</label>
+        <input type="text" class="form-control" id="descripcion_periodo" name="descripcion_periodo"
+            value="{{ periodo.descripcion_periodo if periodo else '' }}" required>
+    </div>
+    <div class="mb-3">
+        <label for="fecha_inicio_insc" class="form-label">Fecha Inicio</label>
+        <input type="date" class="form-control" id="fecha_inicio_insc" name="fecha_inicio_insc"
+            value="{{ periodo.fecha_inicio_insc if periodo else '' }}" required>
+    </div>
+    <div class="mb-3">
+        <label for="fecha_fin_insc" class="form-label">Fecha Fin</label>
+        <input type="date" class="form-control" id="fecha_fin_insc" name="fecha_fin_insc"
+            value="{{ periodo.fecha_fin_insc if periodo else '' }}" required>
+    </div>
+    <div class="mb-3">
+        <label for="costo_por_credito" class="form-label">Costo por Crédito</label>
+        <input type="number" step="0.01" class="form-control" id="costo_por_credito" name="costo_por_credito"
+            value="{{ periodo.costo_por_credito if periodo else '' }}" required>
+    </div>
+    <div class="mb-3">
+        <label for="estatus" class="form-label">Estatus</label>
+        <select class="form-select" id="estatus" name="estatus" required>
+            <option value="ABIERTO" {% if periodo and periodo.estatus=='ABIERTO' %}selected{% endif %}>Abierto</option>
+            <option value="CERRADO" {% if periodo and periodo.estatus=='CERRADO' %}selected{% endif %}>Cerrado</option>
+        </select>
+    </div>
+    <button type="submit" class="btn btn-success">Guardar</button>
+    <a href="{{ url_for('list_periodos') }}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}
