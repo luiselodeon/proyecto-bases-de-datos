@@ -11,8 +11,9 @@ from utils.auth import login_required, role_required
 # --- Importar CRUDs y conexión DB ---
 from utils.db import get_db_connection
 from utils.estudiantes import students_crud
-from utils.cursos import carreras_crud, asignaturas_crud, asignaturaxcarrera_crud
+from utils.cursos import carreras_crud, asignaturas_crud
 from utils.aulas_horarios import departamentos_crud, departamentoasignatura_crud
+from utils.calificaciones import calificacion_estudiante_crud
 from utils.finanzas_becas import becas_crud, tipobeca_crud
 
 # --- CONFIGURACIÓN ---
@@ -291,86 +292,6 @@ def search_carreras():
     return render_template("cursos/carrera_list.html", carreras=carreras)
 
 
-# --- Rutas para Asignatura x Carrera ---
-
-@app.route("/cursos_planes/asignaturaxcarrera")
-def list_asignaturaxcarrera():
-    conn = get_db_connection()
-    if conn is None:
-        return render_template("asignaturaxcarrera_list.html", relaciones=[])
-
-    cursor = conn.cursor(dictionary=True)
-    relaciones = asignaturaxcarrera_crud.list_asignaturaxcarrera(cursor)
-    cursor.close()
-    conn.close()
-    return render_template("cursos/asignaturaxcarrera_list.html", relaciones=relaciones)
-
-@app.route("/cursos_planes/asignaturaxcarrera/add", methods=["GET", "POST"])
-def add_asignaturaxcarrera():
-    conn = get_db_connection()
-    if conn is None:
-        return redirect(url_for("list_asignaturaxcarrera"))
-
-    cursor = conn.cursor(dictionary=True)
-
-    if request.method == "POST":
-        idcarrera = request.form.get("idcarrera")
-        idasignatura = request.form.get("idasignatura")
-
-        try:
-            asignaturaxcarrera_crud.add_asignaturaxcarrera(cursor, idcarrera, idasignatura)
-            conn.commit()
-            flash("Asignatura asociada a la carrera correctamente.", "success")
-        except mysql.connector.Error as err:
-            conn.rollback()
-            flash(f"Error al guardar la relación: {err}", "danger")
-        finally:
-            cursor.close()
-            conn.close()
-        return redirect(url_for("list_asignaturaxcarrera"))
-
-    # GET
-    carreras = asignaturaxcarrera_crud.get_carreras(cursor)
-    asignaturas = asignaturaxcarrera_crud.get_asignaturas(cursor)
-    cursor.close()
-    conn.close()
-    return render_template("cursos/asignaturaxcarrera_form.html", carreras=carreras, asignaturas=asignaturas, relacion=None)
-
-@app.route("/cursos_planes/asignaturaxcarrera/delete/<int:idcarrera>/<int:idasignatura>", methods=["POST"])
-def delete_asignaturaxcarrera(idcarrera, idasignatura):
-    conn = get_db_connection()
-    if conn is None:
-        return redirect(url_for("list_asignaturaxcarrera"))
-
-    cursor = conn.cursor()
-    try:
-        asignaturaxcarrera_crud.delete_asignaturaxcarrera(cursor, idcarrera, idasignatura)
-        conn.commit()
-        flash("Relación eliminada correctamente.", "success")
-    except mysql.connector.Error as err:
-        conn.rollback()
-        flash(f"No se pudo eliminar la relación: {err}", "danger")
-    finally:
-        cursor.close()
-        conn.close()
-    return redirect(url_for("list_asignaturaxcarrera"))
-
-@app.route("/cursos_planes/asignaturaxcarrera/search")
-def search_asignaturaxcarrera():
-    query_term = request.args.get("query", "").strip()
-    if not query_term:
-        return redirect(url_for("list_asignaturaxcarrera"))
-
-    conn = get_db_connection()
-    if conn is None:
-        return redirect(url_for("list_asignaturaxcarrera"))
-
-    cursor = conn.cursor(dictionary=True)
-    relaciones = asignaturaxcarrera_crud.search_asignaturaxcarrera(cursor, query_term)
-    cursor.close()
-    conn.close()
-    flash(f'Mostrando resultados para "{query_term}".', "info")
-    return render_template("cursos/asignaturaxcarrera_list.html", relaciones=relaciones)
 
 
 # --- Rutas para Departamento Académico ---
@@ -806,19 +727,6 @@ def add_departamento_asignatura():
             flash("Departamento de asignatura añadido correctamente.", "success")
         except mysql.connector.Error as err:
             conn.rollback()
-            flash(f"Error al añadir: {err}", "danger")
-        finally:
-            cursor.close()
-            conn.close()
-        return redirect(url_for("list_departamentos_asignatura"))
-    return render_template("aulas_horarios/departamentoasignatura_form.html", departamento=None)
-
-@app.route("/aulas_horarios/departamentos_asignatura/edit/<int:iddep>", methods=["GET", "POST"])
-def edit_departamento_asignatura(iddep):
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-
-    if request.method == "POST":
         nombre = request.form["nombre_deptoasignatura"]
         try:
             departamentoasignatura_crud.update_departamento_asignatura(cursor, iddep, nombre)
@@ -867,6 +775,128 @@ def search_departamentos_asignatura():
     conn.close()
     flash(f'Resultados para "{term}"', "info")
     return render_template("departamentoasignatura_list.html", departamentos=resultados)
+
+
+# --- Rutas para Calificación Estudiante ---
+
+@app.route("/calificaciones/calificacion_estudiante")
+def list_calificacion_estudiante():
+    conn = get_db_connection()
+    if conn is None:
+        return render_template("calificaciones/calificacion_estudiante_list.html", calificaciones=[])
+    
+    cursor = conn.cursor(dictionary=True)
+    calificaciones = calificacion_estudiante_crud.list_calificaciones(cursor)
+    cursor.close()
+    conn.close()
+    return render_template("calificaciones/calificacion_estudiante_list.html", calificaciones=calificaciones)
+
+@app.route("/calificaciones/calificacion_estudiante/add", methods=["GET", "POST"])
+def add_calificacion_estudiante():
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_calificacion_estudiante"))
+    
+    cursor = conn.cursor(dictionary=True)
+
+    if request.method == "POST":
+        idevaluacion = request.form["idevaluacion"]
+        idinscripcion = request.form["idinscripcion"]
+        calificacion = request.form["calificacion"]
+        observaciones = request.form["observaciones"]
+
+        try:
+            calificacion_estudiante_crud.add_calificacion(cursor, idevaluacion, idinscripcion, calificacion, observaciones)
+            conn.commit()
+            flash("Calificación añadida correctamente.", "success")
+        except mysql.connector.Error as err:
+            conn.rollback()
+            flash(f"Error al añadir calificación: {err}", "danger")
+        finally:
+            cursor.close()
+            conn.close()
+        return redirect(url_for("list_calificacion_estudiante"))
+
+    # GET
+    evaluaciones = calificacion_estudiante_crud.get_evaluaciones(cursor)
+    inscripciones = calificacion_estudiante_crud.get_inscripciones(cursor)
+    cursor.close()
+    conn.close()
+    return render_template("calificaciones/calificacion_estudiante_form.html", calificacion=None, evaluaciones=evaluaciones, inscripciones=inscripciones)
+
+@app.route("/calificaciones/calificacion_estudiante/edit/<int:idevaluacion>/<int:idinscripcion>", methods=["GET", "POST"])
+def edit_calificacion_estudiante(idevaluacion, idinscripcion):
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_calificacion_estudiante"))
+    
+    cursor = conn.cursor(dictionary=True)
+
+    if request.method == "POST":
+        calificacion = request.form["calificacion"]
+        observaciones = request.form["observaciones"]
+
+        try:
+            calificacion_estudiante_crud.update_calificacion(cursor, idevaluacion, idinscripcion, calificacion, observaciones)
+            conn.commit()
+            flash("Calificación actualizada correctamente.", "success")
+        except mysql.connector.Error as err:
+            conn.rollback()
+            flash(f"Error al actualizar calificación: {err}", "danger")
+        finally:
+            cursor.close()
+            conn.close()
+        return redirect(url_for("list_calificacion_estudiante"))
+
+    # GET
+    calificacion = calificacion_estudiante_crud.get_calificacion(cursor, idevaluacion, idinscripcion)
+    if not calificacion:
+        flash("Calificación no encontrada.", "warning")
+        cursor.close()
+        conn.close()
+        return redirect(url_for("list_calificacion_estudiante"))
+
+    evaluaciones = calificacion_estudiante_crud.get_evaluaciones(cursor)
+    inscripciones = calificacion_estudiante_crud.get_inscripciones(cursor)
+    cursor.close()
+    conn.close()
+    return render_template("calificaciones/calificacion_estudiante_form.html", calificacion=calificacion, evaluaciones=evaluaciones, inscripciones=inscripciones)
+
+@app.route("/calificaciones/calificacion_estudiante/delete/<int:idevaluacion>/<int:idinscripcion>", methods=["POST"])
+def delete_calificacion_estudiante(idevaluacion, idinscripcion):
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_calificacion_estudiante"))
+    
+    cursor = conn.cursor()
+    try:
+        calificacion_estudiante_crud.delete_calificacion(cursor, idevaluacion, idinscripcion)
+        conn.commit()
+        flash("Calificación eliminada correctamente.", "success")
+    except mysql.connector.Error as err:
+        conn.rollback()
+        flash(f"No se pudo eliminar la calificación: {err}", "danger")
+    finally:
+        cursor.close()
+        conn.close()
+    return redirect(url_for("list_calificacion_estudiante"))
+
+@app.route("/calificaciones/calificacion_estudiante/search")
+def search_calificacion_estudiante():
+    query_term = request.args.get("query", "").strip()
+    if not query_term:
+        return redirect(url_for("list_calificacion_estudiante"))
+
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_calificacion_estudiante"))
+
+    cursor = conn.cursor(dictionary=True)
+    calificaciones = calificacion_estudiante_crud.search_calificaciones(cursor, query_term)
+    cursor.close()
+    conn.close()
+    flash(f'Mostrando resultados para "{query_term}".', "info")
+    return render_template("calificaciones/calificacion_estudiante_list.html", calificaciones=calificaciones)
 
 
 # --- Iniciar la Aplicación ---

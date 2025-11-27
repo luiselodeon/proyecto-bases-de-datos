@@ -13,7 +13,7 @@ services:
       - "3506:3306"   # opcional: para conectarte desde tu host
     volumes:
       - proyecto_bases_mysql_data:/var/lib/mysql
-      - ./Script_Intersemestral.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./sql_nuevo.sql:/docker-entrypoint-initdb.d/init.sql:ro
     tmpfs:
       - /var/run/mysqld 
     healthcheck:
