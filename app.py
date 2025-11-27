@@ -3,6 +3,7 @@ from flask import Flask, render_template, request, redirect, session, url_for, f
 from flask_bcrypt import Bcrypt
 from dotenv import load_dotenv
 import mysql.connector
+from werkzeug.security import check_password_hash
 from utils.auth import login_required, role_required
 
 
@@ -2338,9 +2339,8 @@ def login():
         user = cursor.fetchone()
         print("Usuario obtenido:", user)
 
-        if user and user["password"] == password_form:
-            # Si estás usando bcrypt, cambiar por:
-            # if bcrypt.check_password_hash(user["password"], password_form):
+        if user and check_password_hash(user["password"], password_form):
+            # Contraseña verificada correctamente con hash
 
             session["user_id"] = user["idusuario"]
             session["user_email"] = user["email"]
@@ -2391,10 +2391,12 @@ def register():
             conn.close()
             return redirect(url_for("register"))
 
-        # insertar usuario sin hashing
+        # insertar usuario con hashing de contraseña
+        from werkzeug.security import generate_password_hash
+        hashed_password = generate_password_hash(password)
         cursor.execute(
             "INSERT INTO usuarios (email, password, rol) VALUES (%s, %s, %s)",
-            (email, password, role)
+            (email, hashed_password, role)
         )
         conn.commit()
 
