@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Editar' if asistencia else 'Añadir' }} Asistencia{% endblock %}
+{% block content %}
+<h2>{{ 'Editar' if asistencia else 'Añadir' }} Asistencia</h2>
+<form method="POST">
+    <div class="mb-3">
+        <label for="idclase" class="form-label">Clase Programada</label>
+        <select class="form-select" id="idclase" name="idclase" required {{ 'disabled' if asistencia else '' }}>
+            <option value="">Seleccione clase</option>
+            {% for c in clases %}
+            <option value="{{ c.idclaseprogramada }}" {% if asistencia and
+                asistencia.idclaseprogramada==c.idclaseprogramada %}selected{% endif %}>{{ c.descripcion }}</option>
+            {% endfor %}
+        </select>
+        {% if asistencia %}<input type="hidden" name="idclase" value="{{ asistencia.idclaseprogramada }}">{% endif %}
+    </div>
+    <div class="mb-3">
+        <label for="fecha" class="form-label">Fecha</label>
+        <input type="date" class="form-control" id="fecha" name="fecha"
+            value="{{ asistencia.fecha if asistencia else '' }}" required {{ 'disabled' if asistencia else '' }}>
+        {% if asistencia %}<input type="hidden" name="fecha" value="{{ asistencia.fecha }}">{% endif %}
+    </div>
+    <div class="mb-3">
+        <label for="tipo" class="form-label">Tipo</label>
+        <select class="form-select" id="tipo" name="tipo" required {{ 'disabled' if asistencia else '' }}
+            onchange="togglePersona()">
+            <option value="">Seleccione tipo</option>
+            <option value="ESTUDIANTE" {% if asistencia and asistencia.tipo=='ESTUDIANTE' %}selected{% endif %}>
+                Estudiante</option>
+            <option value="DOCENTE" {% if asistencia and asistencia.tipo=='DOCENTE' %}selected{% endif %}>Docente
+            </option>
+        </select>
+        {% if asistencia %}<input type="hidden" name="tipo" value="{{ asistencia.tipo }}">{% endif %}
+    </div>
+    <div class="mb-3" id="estudiante_div" style="display:none;">
+        <label for="matricula" class="form-label">Estudiante</label>
+        <select class="form-select" id="matricula" name="matricula" {{ 'disabled' if asistencia else '' }}>
+            <option value="">Seleccione estudiante</option>
+            {% for e in estudiantes %}
+            <option value="{{ e.matricula_alumno }}" {% if asistencia and
+                asistencia.matricula_alumno==e.matricula_alumno %}selected{% endif %}>{{ e.nombre_completo }}</option>
+            {% endfor %}
+        </select>
+        {% if asistencia and asistencia.matricula_alumno %}<input type="hidden" name="matricula"
+            value="{{ asistencia.matricula_alumno }}">{% endif %}
+    </div>
+    <div class="mb-3" id="docente_div" style="display:none;">
+        <label for="iddocente" class="form-label">Docente</label>
+        <select class="form-select" id="iddocente" name="iddocente" {{ 'disabled' if asistencia else '' }}>
+            <option value="">Seleccione docente</option>
+            {% for d in docentes %}
+            <option value="{{ d.iddocente }}" {% if asistencia and asistencia.iddocente==d.iddocente %}selected{% endif
+                %}>{{ d.nombre_completo }}</option>
+            {% endfor %}
+        </select>
+        {% if asistencia and asistencia.iddocente %}<input type="hidden" name="iddocente"
+            value="{{ asistencia.iddocente }}">{% endif %}
+    </div>
+    <div class="mb-3">
+        <label for="estatus" class="form-label">Estatus</label>
+        <select class="form-select" id="estatus" name="estatus" required>
+            <option value="ASISTIO" {% if asistencia and asistencia.estatus=='ASISTIO' %}selected{% endif %}>Asistió
+            </option>
+            <option value="FALTO" {% if asistencia and asistencia.estatus=='FALTO' %}selected{% endif %}>Faltó</option>
+            <option value="JUSTIFICADO" {% if asistencia and asistencia.estatus=='JUSTIFICADO' %}selected{% endif %}>
+                Justificado</option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <label for="observaciones" class="form-label">Observaciones</label>
+        <textarea class="form-control" id="observaciones" name="observaciones"
+            rows="2">{{ asistencia.observaciones if asistencia else '' }}</textarea>
+    </div>
+    <button type="submit" class="btn btn-success">Guardar</button>
+    <a href="{{ url_for('list_asistencias') }}" class="btn btn-secondary">Cancelar</a>
+</form>
+<script>
+    function togglePersona() {
+        var tipo = document.getElementById('tipo').value;
+        document.getElementById('estudiante_div').style.display = tipo === 'ESTUDIANTE' ? 'block' : 'none';
+        document.getElementById('docente_div').style.display = tipo === 'DOCENTE' ? 'block' : 'none';
+    }
+    {% if asistencia %}
+    window.onload = togglePersona;
+    {% endif %}
+</script>
+{% endblock %}

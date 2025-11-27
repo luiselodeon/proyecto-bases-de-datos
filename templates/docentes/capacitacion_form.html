@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Editar' if capacitacion else 'Añadir' }} Capacitación{% endblock %}
+{% block content %}
+<h2>{{ 'Editar' if capacitacion else 'Añadir' }} Capacitación</h2>
+<form method="POST">
+    <div class="mb-3">
+        <label for="descripcion" class="form-label">Descripción</label>
+        <input type="text" class="form-control" id="descripcion" name="descripcion"
+            value="{{ capacitacion.descripcion if capacitacion else '' }}" required>
+    </div>
+    <div class="mb-3">
+        <label for="institucion" class="form-label">Institución</label>
+        <input type="text" class="form-control" id="institucion" name="institucion"
+            value="{{ capacitacion.institucion if capacitacion else '' }}">
+    </div>
+    <div class="mb-3">
+        <label for="fecha_inicio" class="form-label">Fecha Inicio</label>
+        <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio"
+            value="{{ capacitacion.fecha_inicio if capacitacion else '' }}" required>
+    </div>
+    <div class="mb-3">
+        <label for="fecha_fin" class="form-label">Fecha Fin</label>
+        <input type="date" class="form-control" id="fecha_fin" name="fecha_fin"
+            value="{{ capacitacion.fecha_fin if capacitacion else '' }}">
+    </div>
+    <div class="mb-3">
+        <label for="horas" class="form-label">Horas</label>
+        <input type="number" step="0.01" class="form-control" id="horas" name="horas"
+            value="{{ capacitacion.horas_capacitacion if capacitacion else '' }}">
+    </div>
+    <button type="submit" class="btn btn-success">Guardar</button>
+    <a href="{{ url_for('list_capacitaciones') }}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}

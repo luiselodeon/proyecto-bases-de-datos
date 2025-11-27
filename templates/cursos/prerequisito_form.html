@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Añadir Prerequisito{% endblock %}
+{% block content %}
+<h2>Añadir Prerequisito</h2>
+<form method="POST">
+    <div class="mb-3">
+        <label for="idasignatura" class="form-label">Asignatura</label>
+        <select class="form-select" id="idasignatura" name="idasignatura" required>
+            <option value="">Seleccione asignatura</option>
+            {% for a in asignaturas %}
+            <option value="{{ a.idasignatura }}">{{ a.nombre_asignatura }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="mb-3">
+        <label for="idasignatura_prereq" class="form-label">Prerequisito</label>
+        <select class="form-select" id="idasignatura_prereq" name="idasignatura_prereq" required>
+            <option value="">Seleccione prerequisito</option>
+            {% for a in asignaturas %}
+            <option value="{{ a.idasignatura }}">{{ a.nombre_asignatura }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <button type="submit" class="btn btn-success">Guardar</button>
+    <a href="{{ url_for('list_prerequisitos') }}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}

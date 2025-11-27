@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Editar' if evaluacion else 'Añadir' }} Evaluación{% endblock %}
+{% block content %}
+<h2>{{ 'Editar' if evaluacion else 'Añadir' }} Evaluación</h2>
+<form method="POST">
+    <div class="mb-3">
+        <label for="idclase" class="form-label">Clase Programada</label>
+        <select class="form-select" id="idclase" name="idclase" required {{ 'disabled' if evaluacion else '' }}>
+            <option value="">Seleccione clase</option>
+            {% for c in clases %}
+            <option value="{{ c.idclaseprogramada }}" {% if evaluacion and
+                evaluacion.idclaseprogramada==c.idclaseprogramada %}selected{% endif %}>{{ c.descripcion }}</option>
+            {% endfor %}
+        </select>
+        {% if evaluacion %}<input type="hidden" name="idclase" value="{{ evaluacion.idclaseprogramada }}">{% endif %}
+    </div>
+    <div class="mb-3">
+        <label for="tipo" class="form-label">Tipo</label>
+        <select class="form-select" id="tipo" name="tipo" required>
+            <option value="TAREA" {% if evaluacion and evaluacion.tipo_actividad=='TAREA' %}selected{% endif %}>Tarea
+            </option>
+            <option value="EXAMEN" {% if evaluacion and evaluacion.tipo_actividad=='EXAMEN' %}selected{% endif %}>Examen
+            </option>
+            <option value="PROYECTO" {% if evaluacion and evaluacion.tipo_actividad=='PROYECTO' %}selected{% endif %}>
+                Proyecto</option>
+            <option value="PARTICIPACION" {% if evaluacion and evaluacion.tipo_actividad=='PARTICIPACION' %}selected{%
+                endif %}>Participación</option>
+            <option value="OTRO" {% if evaluacion and evaluacion.tipo_actividad=='OTRO' %}selected{% endif %}>Otro
+            </option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <label for="descripcion" class="form-label">Descripción</label>
+        <input type="text" class="form-control" id="descripcion" name="descripcion"
+            value="{{ evaluacion.descripcion if evaluacion else '' }}">
+    </div>
+    <div class="mb-3">
+        <label for="fecha" class="form-label">Fecha</label>
+        <input type="date" class="form-control" id="fecha" name="fecha"
+            value="{{ evaluacion.fecha_aplicacion if evaluacion else '' }}">
+    </div>
+    <div class="mb-3">
+        <label for="porcentaje" class="form-label">Porcentaje (0-100)</label>
+        <input type="number" step="0.01" min="0" max="100" class="form-control" id="porcentaje" name="porcentaje"
+            value="{{ evaluacion.porcentaje if evaluacion else '' }}">
+    </div>
+    <button type="submit" class="btn btn-success">Guardar</button>
+    <a href="{{ url_for('list_evaluaciones') }}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}

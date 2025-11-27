@@ -11,11 +11,12 @@ from utils.auth import login_required, role_required
 # --- Importar CRUDs y conexión DB ---
 from utils.db import get_db_connection
 from utils.estudiantes import students_crud, historialacademico_crud, inscripcion_crud
-from utils.cursos import carreras_crud, asignaturas_crud, periodoinscripciones_crud
+from utils.cursos import carreras_crud, asignaturas_crud, periodoinscripciones_crud, prerequisito_crud
 from utils.aulas_horarios import departamentos_crud, departamentoasignatura_crud
-from utils.docentes import docente_crud, claseprogramada_crud
-from utils.calificaciones import calificacion_estudiante_crud
+from utils.docentes import docente_crud, claseprogramada_crud, capacitacion_crud
+from utils.calificaciones import calificacion_estudiante_crud, evaluacion_crud
 from utils.finanzas_becas import becas_crud, tipobeca_crud
+from utils.asistencia import asistencia_crud
 
 # --- CONFIGURACIÓN ---
 load_dotenv()
@@ -1475,6 +1476,403 @@ def search_clases():
     conn.close()
     flash(f'Resultados para "{query_term}".', "info")
     return render_template("docentes/claseprogramada_list.html", clases=clases)
+
+
+# --- Rutas para Capacitación ---
+
+@app.route("/capacitaciones")
+def list_capacitaciones():
+    conn = get_db_connection()
+    if conn is None:
+        return render_template("docentes/capacitacion_list.html", capacitaciones=[])
+    cursor = conn.cursor(dictionary=True)
+    capacitaciones = capacitacion_crud.list_capacitaciones(cursor)
+    cursor.close()
+    conn.close()
+    return render_template("docentes/capacitacion_list.html", capacitaciones=capacitaciones)
+
+@app.route("/capacitaciones/add", methods=["GET", "POST"])
+def add_capacitacion():
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_capacitaciones"))
+    cursor = conn.cursor()
+    if request.method == "POST":
+        desc = request.form["descripcion"]
+        inst = request.form.get("institucion") or None
+        inicio = request.form["fecha_inicio"]
+        fin = request.form.get("fecha_fin") or None
+        horas = request.form.get("horas") or None
+        try:
+            capacitacion_crud.add_capacitacion(cursor, desc, inicio, fin, horas, inst)
+            conn.commit()
+            flash("Capacitación añadida correctamente.", "success")
+        except mysql.connector.Error as err:
+            conn.rollback()
+            flash(f"Error: {err}", "danger")
+        finally:
+            cursor.close()
+            conn.close()
+        return redirect(url_for("list_capacitaciones"))
+    cursor.close()
+    conn.close()
+    return render_template("docentes/capacitacion_form.html", capacitacion=None)
+
+@app.route("/capacitaciones/edit/<int:idcapacitacion>", methods=["GET", "POST"])
+def edit_capacitacion(idcapacitacion):
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_capacitaciones"))
+    cursor = conn.cursor(dictionary=True)
+    if request.method == "POST":
+        desc = request.form["descripcion"]
+        inst = request.form.get("institucion") or None
+        inicio = request.form["fecha_inicio"]
+        fin = request.form.get("fecha_fin") or None
+        horas = request.form.get("horas") or None
+        try:
+            capacitacion_crud.update_capacitacion(cursor, idcapacitacion, desc, inicio, fin, horas, inst)
+            conn.commit()
+            flash("Capacitación actualizada correctamente.", "success")
+        except mysql.connector.Error as err:
+            conn.rollback()
+            flash(f"Error: {err}", "danger")
+        finally:
+            cursor.close()
+            conn.close()
+        return redirect(url_for("list_capacitaciones"))
+    capacitacion = capacitacion_crud.get_capacitacion(cursor, idcapacitacion)
+    cursor.close()
+    conn.close()
+    if not capacitacion:
+        flash("Capacitación no encontrada.", "warning")
+        return redirect(url_for("list_capacitaciones"))
+    return render_template("docentes/capacitacion_form.html", capacitacion=capacitacion)
+
+@app.route("/capacitaciones/delete/<int:idcapacitacion>", methods=["POST"])
+def delete_capacitacion(idcapacitacion):
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_capacitaciones"))
+    cursor = conn.cursor()
+    try:
+        capacitacion_crud.delete_capacitacion(cursor, idcapacitacion)
+        conn.commit()
+        flash("Capacitación eliminada correctamente.", "success")
+    except mysql.connector.Error as err:
+        conn.rollback()
+        flash(f"Error: {err}", "danger")
+    finally:
+        cursor.close()
+        conn.close()
+    return redirect(url_for("list_capacitaciones"))
+
+@app.route("/capacitaciones/search")
+def search_capacitaciones():
+    query_term = request.args.get("query", "").strip()
+    if not query_term:
+        return redirect(url_for("list_capacitaciones"))
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_capacitaciones"))
+    cursor = conn.cursor(dictionary=True)
+    capacitaciones = capacitacion_crud.search_capacitaciones(cursor, query_term)
+    cursor.close()
+    conn.close()
+    flash(f'Resultados para "{query_term}".', "info")
+    return render_template("docentes/capacitacion_list.html", capacitaciones=capacitaciones)
+
+
+# --- Rutas para Prerequisitos ---
+
+@app.route("/prerequisitos")
+def list_prerequisitos():
+    conn = get_db_connection()
+    if conn is None:
+        return render_template("cursos/prerequisito_list.html", prerequisitos=[])
+    cursor = conn.cursor(dictionary=True)
+    prerequisitos = prerequisito_crud.list_prerequisitos(cursor)
+    cursor.close()
+    conn.close()
+    return render_template("cursos/prerequisito_list.html", prerequisitos=prerequisitos)
+
+@app.route("/prerequisitos/add", methods=["GET", "POST"])
+def add_prerequisito():
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_prerequisitos"))
+    cursor = conn.cursor(dictionary=True)
+    if request.method == "POST":
+        idasignatura = request.form["idasignatura"]
+        idasignatura_prereq = request.form["idasignatura_prereq"]
+        try:
+            prerequisito_crud.add_prerequisito(cursor, idasignatura, idasignatura_prereq)
+            conn.commit()
+            flash("Prerequisito añadido correctamente.", "success")
+        except mysql.connector.Error as err:
+            conn.rollback()
+            flash(f"Error: {err}", "danger")
+        finally:
+            cursor.close()
+            conn.close()
+        return redirect(url_for("list_prerequisitos"))
+    asignaturas = prerequisito_crud.get_asignaturas(cursor)
+    cursor.close()
+    conn.close()
+    return render_template("cursos/prerequisito_form.html", asignaturas=asignaturas)
+
+@app.route("/prerequisitos/delete/<int:idasignatura>/<int:idasignatura_prereq>", methods=["POST"])
+def delete_prerequisito(idasignatura, idasignatura_prereq):
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_prerequisitos"))
+    cursor = conn.cursor()
+    try:
+        prerequisito_crud.delete_prerequisito(cursor, idasignatura, idasignatura_prereq)
+        conn.commit()
+        flash("Prerequisito eliminado correctamente.", "success")
+    except mysql.connector.Error as err:
+        conn.rollback()
+        flash(f"Error: {err}", "danger")
+    finally:
+        cursor.close()
+        conn.close()
+    return redirect(url_for("list_prerequisitos"))
+
+@app.route("/prerequisitos/search")
+def search_prerequisitos():
+    query_term = request.args.get("query", "").strip()
+    if not query_term:
+        return redirect(url_for("list_prerequisitos"))
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_prerequisitos"))
+    cursor = conn.cursor(dictionary=True)
+    prerequisitos = prerequisito_crud.search_prerequisitos(cursor, query_term)
+    cursor.close()
+    conn.close()
+    flash(f'Resultados para "{query_term}".', "info")
+    return render_template("cursos/prerequisito_list.html", prerequisitos=prerequisitos)
+
+
+# --- Rutas para Evaluaciones ---
+
+@app.route("/evaluaciones")
+def list_evaluaciones():
+    conn = get_db_connection()
+    if conn is None:
+        return render_template("calificaciones/evaluacion_list.html", evaluaciones=[])
+    cursor = conn.cursor(dictionary=True)
+    evaluaciones = evaluacion_crud.list_evaluaciones(cursor)
+    cursor.close()
+    conn.close()
+    return render_template("calificaciones/evaluacion_list.html", evaluaciones=evaluaciones)
+
+@app.route("/evaluaciones/add", methods=["GET", "POST"])
+def add_evaluacion():
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_evaluaciones"))
+    cursor = conn.cursor(dictionary=True)
+    if request.method == "POST":
+        idclase = request.form["idclase"]
+        tipo = request.form["tipo"]
+        desc = request.form.get("descripcion") or None
+        fecha = request.form.get("fecha") or None
+        porc = request.form.get("porcentaje") or None
+        try:
+            evaluacion_crud.add_evaluacion(cursor, idclase, tipo, desc, fecha, porc)
+            conn.commit()
+            flash("Evaluación añadida correctamente.", "success")
+        except mysql.connector.Error as err:
+            conn.rollback()
+            flash(f"Error: {err}", "danger")
+        finally:
+            cursor.close()
+            conn.close()
+        return redirect(url_for("list_evaluaciones"))
+    clases = evaluacion_crud.get_clases(cursor)
+    cursor.close()
+    conn.close()
+    return render_template("calificaciones/evaluacion_form.html", evaluacion=None, clases=clases)
+
+@app.route("/evaluaciones/edit/<int:idevaluacion>", methods=["GET", "POST"])
+def edit_evaluacion(idevaluacion):
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_evaluaciones"))
+    cursor = conn.cursor(dictionary=True)
+    if request.method == "POST":
+        tipo = request.form["tipo"]
+        desc = request.form.get("descripcion") or None
+        fecha = request.form.get("fecha") or None
+        porc = request.form.get("porcentaje") or None
+        try:
+            evaluacion_crud.update_evaluacion(cursor, idevaluacion, tipo, desc, fecha, porc)
+            conn.commit()
+            flash("Evaluación actualizada correctamente.", "success")
+        except mysql.connector.Error as err:
+            conn.rollback()
+            flash(f"Error: {err}", "danger")
+        finally:
+            cursor.close()
+            conn.close()
+        return redirect(url_for("list_evaluaciones"))
+    evaluacion = evaluacion_crud.get_evaluacion(cursor, idevaluacion)
+    if not evaluacion:
+        flash("Evaluación no encontrada.", "warning")
+        cursor.close()
+        conn.close()
+        return redirect(url_for("list_evaluaciones"))
+    clases = evaluacion_crud.get_clases(cursor)
+    cursor.close()
+    conn.close()
+    return render_template("calificaciones/evaluacion_form.html", evaluacion=evaluacion, clases=clases)
+
+@app.route("/evaluaciones/delete/<int:idevaluacion>", methods=["POST"])
+def delete_evaluacion(idevaluacion):
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_evaluaciones"))
+    cursor = conn.cursor()
+    try:
+        evaluacion_crud.delete_evaluacion(cursor, idevaluacion)
+        conn.commit()
+        flash("Evaluación eliminada correctamente.", "success")
+    except mysql.connector.Error as err:
+        conn.rollback()
+        flash(f"Error: {err}", "danger")
+    finally:
+        cursor.close()
+        conn.close()
+    return redirect(url_for("list_evaluaciones"))
+
+@app.route("/evaluaciones/search")
+def search_evaluaciones():
+    query_term = request.args.get("query", "").strip()
+    if not query_term:
+        return redirect(url_for("list_evaluaciones"))
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_evaluaciones"))
+    cursor = conn.cursor(dictionary=True)
+    evaluaciones = evaluacion_crud.search_evaluaciones(cursor, query_term)
+    cursor.close()
+    conn.close()
+    flash(f'Resultados para "{query_term}".', "info")
+    return render_template("calificaciones/evaluacion_list.html", evaluaciones=evaluaciones)
+
+
+# --- Rutas para Asistencia ---
+
+@app.route("/asistencias")
+def list_asistencias():
+    conn = get_db_connection()
+    if conn is None:
+        return render_template("asistencia/asistencia_list.html", asistencias=[])
+    cursor = conn.cursor(dictionary=True)
+    asistencias = asistencia_crud.list_asistencias(cursor)
+    cursor.close()
+    conn.close()
+    return render_template("asistencia/asistencia_list.html", asistencias=asistencias)
+
+@app.route("/asistencias/add", methods=["GET", "POST"])
+def add_asistencia():
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_asistencias"))
+    cursor = conn.cursor(dictionary=True)
+    if request.method == "POST":
+        idclase = request.form["idclase"]
+        fecha = request.form["fecha"]
+        tipo = request.form["tipo"]
+        matricula = request.form.get("matricula") or None
+        iddocente = request.form.get("iddocente") or None
+        estatus = request.form["estatus"]
+        observaciones = request.form.get("observaciones") or None
+        try:
+            asistencia_crud.add_asistencia(cursor, idclase, fecha, tipo, matricula, iddocente, estatus, observaciones)
+            conn.commit()
+            flash("Asistencia añadida correctamente.", "success")
+        except mysql.connector.Error as err:
+            conn.rollback()
+            flash(f"Error: {err}", "danger")
+        finally:
+            cursor.close()
+            conn.close()
+        return redirect(url_for("list_asistencias"))
+    clases = asistencia_crud.get_clases(cursor)
+    estudiantes = asistencia_crud.get_estudiantes(cursor)
+    docentes = asistencia_crud.get_docentes(cursor)
+    cursor.close()
+    conn.close()
+    return render_template("asistencia/asistencia_form.html", asistencia=None, clases=clases, estudiantes=estudiantes, docentes=docentes)
+
+@app.route("/asistencias/edit/<int:idasistencia>", methods=["GET", "POST"])
+def edit_asistencia(idasistencia):
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_asistencias"))
+    cursor = conn.cursor(dictionary=True)
+    if request.method == "POST":
+        estatus = request.form["estatus"]
+        observaciones = request.form.get("observaciones") or None
+        try:
+            asistencia_crud.update_asistencia(cursor, idasistencia, estatus, observaciones)
+            conn.commit()
+            flash("Asistencia actualizada correctamente.", "success")
+        except mysql.connector.Error as err:
+            conn.rollback()
+            flash(f"Error: {err}", "danger")
+        finally:
+            cursor.close()
+            conn.close()
+        return redirect(url_for("list_asistencias"))
+    asistencia = asistencia_crud.get_asistencia(cursor, idasistencia)
+    if not asistencia:
+        flash("Asistencia no encontrada.", "warning")
+        cursor.close()
+        conn.close()
+        return redirect(url_for("list_asistencias"))
+    clases = asistencia_crud.get_clases(cursor)
+    estudiantes = asistencia_crud.get_estudiantes(cursor)
+    docentes = asistencia_crud.get_docentes(cursor)
+    cursor.close()
+    conn.close()
+    return render_template("asistencia/asistencia_form.html", asistencia=asistencia, clases=clases, estudiantes=estudiantes, docentes=docentes)
+
+@app.route("/asistencias/delete/<int:idasistencia>", methods=["POST"])
+def delete_asistencia(idasistencia):
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_asistencias"))
+    cursor = conn.cursor()
+    try:
+        asistencia_crud.delete_asistencia(cursor, idasistencia)
+        conn.commit()
+        flash("Asistencia eliminada correctamente.", "success")
+    except mysql.connector.Error as err:
+        conn.rollback()
+        flash(f"Error: {err}", "danger")
+    finally:
+        cursor.close()
+        conn.close()
+    return redirect(url_for("list_asistencias"))
+
+@app.route("/asistencias/search")
+def search_asistencias():
+    query_term = request.args.get("query", "").strip()
+    if not query_term:
+        return redirect(url_for("list_asistencias"))
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_asistencias"))
+    cursor = conn.cursor(dictionary=True)
+    asistencias = asistencia_crud.search_asistencias(cursor, query_term)
+    cursor.close()
+    conn.close()
+    flash(f'Resultados para "{query_term}".', "info")
+    return render_template("asistencia/asistencia_list.html", asistencias=asistencias)
 
 
 # --- Iniciar la Aplicación ---

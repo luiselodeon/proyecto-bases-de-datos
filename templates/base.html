@@ -43,8 +43,8 @@
             <ul class="dropdown-menu">
               <li><a class="dropdown-item" href="{{ url_for('list_docentes') }}">Administración Personal</a></li>
               <li><a class="dropdown-item" href="{{ url_for('list_clases') }}">Asignación a Cursos</a></li>
-              <li><a class="dropdown-item" href="{{ url_for('placeholder', section='capacitacion') }}">Capacitación y
-                  Evaluaciones</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('list_capacitaciones') }}">Capacitación y Evaluaciones</a>
+              </li>
             </ul>
           </li>
 
@@ -57,8 +57,7 @@
               <li><a class="dropdown-item" href="{{ url_for('list_carreras') }}">Planes de Estudio (Carreras)</a></li>
               <li><a class="dropdown-item" href="{{ url_for('list_asignaturas') }}">Asignaturas</a></li>
               <li><a class="dropdown-item" href="{{ url_for('list_periodos') }}">Periodos de Inscripción</a></li>
-              <li><a class="dropdown-item" href="{{ url_for('placeholder', section='requisitos') }}">Requisitos
-                  Programa</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('list_prerequisitos') }}">Requisitos Programa</a></li>
             </ul>
           </li>
 
@@ -68,8 +67,7 @@
               Calificaciones
             </a>
             <ul class="dropdown-menu">
-              <li><a class="dropdown-item" href="{{ url_for('placeholder', section='registro_notas') }}">Registro de
-                  Notas</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('list_evaluaciones') }}">Registro de Notas</a></li>
               <li><a class="dropdown-item" href="{{ url_for('list_calificacion_estudiante') }}">Calificación
                   Estudiante</a></li>
               <li><a class="dropdown-item"
@@ -83,8 +81,7 @@
               Asistencia
             </a>
             <ul class="dropdown-menu">
-              <li><a class="dropdown-item" href="{{ url_for('placeholder', section='registro_asistencia') }}">Registro
-                  Asistencia</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('list_asistencias') }}">Registro Asistencia</a></li>
               <li><a class="dropdown-item" href="{{ url_for('placeholder', section='reportes_asistencia') }}">Reportes
                   Asistencia</a></li>
             </ul>
@@ -172,7 +169,7 @@
     <!-- Mostrar mensajes flash (alertas) -->
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
-    {% for category, message in messages %}\
+    {% for category, message in messages %}
     <div class="alert alert-{{ category }} alert-dismissible fade show mb-3" role="alert">
       {{ message }}
       <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
