@@ -8,17 +8,12 @@
 
 <form method="post">
 
-    {% if not departamento %}
-    <div class="mb-3">
-        <label class="form-label">ID Departamento</label>
-        <input type="number" class="form-control" name="iddeptoasignatura" required>
-    </div>
-    {% endif %}
+    {# ID is auto-generated #}
 
     <div class="mb-3">
         <label class="form-label">Nombre del Departamento</label>
         <input type="text" class="form-control" name="nombre_deptoasignatura"
-               value="{{ departamento.nombre_deptoasignatura if departamento else '' }}" required>
+            value="{{ departamento.nombre_deptoasignatura if departamento else '' }}" required>
     </div>
 
     <button type="submit" class="btn btn-primary">

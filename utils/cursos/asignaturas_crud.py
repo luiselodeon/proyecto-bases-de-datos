@@ -24,7 +24,18 @@ def get_departamentos_asignatura(cursor):
     """)
     return cursor.fetchall()
 
-def add_asignatura(cursor, idasignatura, nombre, creditos, horas, iddepto):
+def add_asignatura(cursor, nombre, creditos, horas, iddepto):
+    # 1. Insertar primero para obtener el ID autogenerado
+    cursor.execute("""
+        INSERT INTO asignatura
+            (nombre_asignatura, creditos_asignatura,
+             horas_por_sesion, iddeptoasignatura, clave_asignatura)
+        VALUES (%s, %s, %s, %s, 'TEMP')
+    """, (nombre, creditos, horas, iddepto))
+    
+    new_id = cursor.lastrowid
+    
+    # 2. Generar la clave usando el nuevo ID
     prefijo = "DEPT"
     if iddepto:
         cursor.execute("""
@@ -36,15 +47,15 @@ def add_asignatura(cursor, idasignatura, nombre, creditos, horas, iddepto):
         if row and row["nombre_deptoasignatura"]:
             prefijo = row["nombre_deptoasignatura"][:4].upper()
 
-    codigo = str(idasignatura)[:3]
+    codigo = str(new_id)[:3]
     clave = f"{prefijo}{codigo}"
 
+    # 3. Actualizar la clave
     cursor.execute("""
-        INSERT INTO asignatura
-            (idasignatura, nombre_asignatura, creditos_asignatura,
-             horas_por_sesion, iddeptoasignatura, clave_asignatura)
-        VALUES (%s, %s, %s, %s, %s, %s)
-    """, (idasignatura, nombre, creditos, horas, iddepto, clave))
+        UPDATE asignatura
+        SET clave_asignatura = %s
+        WHERE idasignatura = %s
+    """, (clave, new_id))
 
 def get_asignatura(cursor, idasignatura):
     cursor.execute("""

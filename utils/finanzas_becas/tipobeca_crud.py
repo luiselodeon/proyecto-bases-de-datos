@@ -8,11 +8,11 @@ def list_tipobeca(cursor):
     """)
     return cursor.fetchall()
 
-def add_tipobeca(cursor, idtipo, nombre):
+def add_tipobeca(cursor, nombre):
     cursor.execute("""
-        INSERT INTO tipo_beca (idtipo_beca, nombre_tipo)
-        VALUES (%s, %s)
-    """, (idtipo, nombre))
+        INSERT INTO tipo_beca (nombre_tipo)
+        VALUES (%s)
+    """, (nombre,))
 
 def get_tipobeca(cursor, idtipo):
     cursor.execute("SELECT * FROM tipo_beca WHERE idtipo_beca = %s", (idtipo,))

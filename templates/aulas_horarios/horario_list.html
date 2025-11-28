@@ -33,8 +33,8 @@
                 {% for h in horarios %}
                 <tr>
                     <td>{{ h.dia_semana }}</td>
-                    <td>{{ h.hora_inicio.strftime('%H:%M') if h.hora_inicio else 'N/A' }}</td>
-                    <td>{{ h.hora_fin.strftime('%H:%M') if h.hora_fin else 'N/A' }}</td>
+                    <td>{{ h.hora_inicio|format_timedelta }}</td>
+                    <td>{{ h.hora_fin|format_timedelta }}</td>
                     <td>{{ h.descripcion_horario or 'N/A' }}</td>
                     <td>
                         <a href="{{ url_for('edit_horario', idhorario=h.idhorario) }}"

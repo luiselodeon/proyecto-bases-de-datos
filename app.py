@@ -12,14 +12,13 @@ from utils.auth import login_required, role_required
 # --- Importar CRUDs y conexión DB ---
 from utils.db import get_db_connection
 from utils.estudiantes import students_crud, historialacademico_crud, inscripcion_crud
-from utils.cursos import carreras_crud, asignaturas_crud, periodoinscripciones_crud, prerequisito_crud
+from utils.cursos import carreras_crud, asignaturas_crud, periodoinscripciones_crud, prerequisito_crud, planestudio_crud, calendarioescolar_crud
 from utils.aulas_horarios import departamentos_crud, departamentoasignatura_crud, aula_crud, horario_crud
 from utils.docentes import docente_crud, claseprogramada_crud, capacitacion_crud
 from utils.calificaciones import calificacion_estudiante_crud, evaluacion_crud
 from utils.finanzas_becas import becas_crud, tipobeca_crud, pago_crud, estadodecuenta_crud
 from utils.asistencia import asistencia_crud
 from utils.admin import usuarios_crud
-from utils.cursos import planestudio_crud
 
 # --- CONFIGURACIÓN ---
 load_dotenv()
@@ -31,6 +30,17 @@ app.secret_key = os.getenv("SECRET_KEY", "a-super-secret-key")
 # Inicializar flask bcrypt
 bcrypt = Bcrypt(app)
 app.secret_key = "SUPER_CLAVE_SESION"
+
+# --- Filtros personalizados de Jinja2 ---
+@app.template_filter('format_timedelta')
+def format_timedelta(td):
+    """Convierte un timedelta a formato HH:MM"""
+    if td is None:
+        return 'N/A'
+    total_seconds = int(td.total_seconds())
+    hours = total_seconds // 3600
+    minutes = (total_seconds % 3600) // 60
+    return f"{hours:02d}:{minutes:02d}"
 
 # --- Rutas para Estudiantes ---
 
@@ -202,14 +212,13 @@ def add_carrera():
     cursor = conn.cursor(dictionary=True)
     
     if request.method == "POST":
-        idcarrera = request.form["idcarrera"]
         descripcion = request.form["descripcion_carrera"]
         creditos = request.form["creditos_carrera"]
         iddepto = request.form["iddepartamentoacademico"]
         costo = request.form["costo_inscripcion"]
 
         try:
-            carreras_crud.add_carrera(cursor, idcarrera, descripcion, creditos, iddepto, costo)
+            carreras_crud.add_carrera(cursor, descripcion, creditos, iddepto, costo)
             conn.commit()
             flash("Carrera añadida correctamente.", "success")
             return redirect(url_for("list_carreras"))
@@ -330,13 +339,12 @@ def list_departamentos():
 @app.route("/aulas_horarios/departamentos/add", methods=["GET", "POST"])
 def add_departamento():
     if request.method == "POST":
-        iddep = request.form["iddepartamentoacademico"]
         nombre = request.form["nombre_departamento"]
 
         conn = get_db_connection()
         cursor = conn.cursor()
         try:
-            departamentos_crud.add_departamento(cursor, iddep, nombre)
+            departamentos_crud.add_departamento(cursor, nombre)
             conn.commit()
             flash("Departamento añadido correctamente.", "success")
         except mysql.connector.Error as err:
@@ -434,14 +442,13 @@ def add_asignatura():
     cursor = conn.cursor(dictionary=True)
 
     if request.method == "POST":
-        idasignatura = request.form["idasignatura"]
         nombre = request.form["nombre_asignatura"]
         creditos = request.form["creditos_asignatura"]
         horas = request.form.get("horas_por_sesion") or None
         iddepto = request.form.get("iddeptoasignatura") or None
 
         try:
-            asignaturas_crud.add_asignatura(cursor, idasignatura, nombre, creditos, horas, iddepto)
+            asignaturas_crud.add_asignatura(cursor, nombre, creditos, horas, iddepto)
             conn.commit()
             flash("Asignatura añadida correctamente.", "success")
         except mysql.connector.Error as err:
@@ -517,6 +524,23 @@ def delete_asignatura(idasignatura):
         conn.close()
     return redirect(url_for("list_asignaturas"))
 
+@app.route("/cursos_planes/asignaturas/search")
+def search_asignaturas():
+    query_term = request.args.get("query", "")
+    if not query_term:
+        return redirect(url_for("list_asignaturas"))
+    
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_asignaturas"))
+    
+    cursor = conn.cursor(dictionary=True)
+    asignaturas = asignaturas_crud.search_asignaturas(cursor, query_term)
+    cursor.close()
+    conn.close()
+    
+    flash(f'Mostrando resultados para "{query_term}".', "info")
+    return render_template("cursos/asignatura_list.html", asignaturas=asignaturas)
 
 # --- Rutas para Tipo de Beca ---
 
@@ -644,6 +668,233 @@ def search_planestudios():
     return render_template("cursos/planestudio_list.html", planes=planes)
 
 
+# --- Rutas para Calendario Escolar ---
+
+@app.route("/cursos_planes/calendarios")
+def list_calendarios():
+    conn = get_db_connection()
+    if conn is None:
+        return render_template("cursos/calendarioescolar_list.html", calendarios=[])
+    
+    cursor = conn.cursor(dictionary=True)
+    calendarios = calendarioescolar_crud.list_calendarios(cursor)
+    cursor.close()
+    conn.close()
+    return render_template("cursos/calendarioescolar_list.html", calendarios=calendarios)
+
+@app.route("/cursos_planes/calendarios/add", methods=["GET", "POST"])
+def add_calendario():
+    if request.method == "POST":
+        descripcion = request.form["descripcion"]
+        fecha_inicio = request.form["fecha_inicio"]
+        fecha_fin = request.form["fecha_fin"]
+        
+        conn = get_db_connection()
+        if conn is None:
+            return redirect(url_for("list_calendarios"))
+        
+        cursor = conn.cursor()
+        try:
+            calendarioescolar_crud.add_calendario(cursor, descripcion, fecha_inicio, fecha_fin)
+            conn.commit()
+            flash("Calendario escolar añadido correctamente.", "success")
+        except mysql.connector.Error as err:
+            conn.rollback()
+            flash(f"Error al añadir calendario: {err}", "danger")
+        finally:
+            cursor.close()
+            conn.close()
+        return redirect(url_for("list_calendarios"))
+    
+    return render_template("cursos/calendarioescolar_form.html", calendario=None)
+
+@app.route("/cursos_planes/calendarios/edit/<int:idcalendario>", methods=["GET", "POST"])
+def edit_calendario(idcalendario):
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_calendarios"))
+    
+    cursor = conn.cursor(dictionary=True)
+    
+    if request.method == "POST":
+        descripcion = request.form["descripcion"]
+        fecha_inicio = request.form["fecha_inicio"]
+        fecha_fin = request.form["fecha_fin"]
+        
+        try:
+            calendarioescolar_crud.update_calendario(cursor, idcalendario, descripcion, fecha_inicio, fecha_fin)
+            conn.commit()
+            flash("Calendario escolar actualizado correctamente.", "success")
+        except mysql.connector.Error as err:
+            conn.rollback()
+            flash(f"Error al actualizar calendario: {err}", "danger")
+        finally:
+            cursor.close()
+            conn.close()
+        return redirect(url_for("list_calendarios"))
+    
+    # GET
+    calendario = calendarioescolar_crud.get_calendario(cursor, idcalendario)
+    cursor.close()
+    conn.close()
+    if not calendario:
+        flash("Calendario no encontrado.", "warning")
+        return redirect(url_for("list_calendarios"))
+    return render_template("cursos/calendarioescolar_form.html", calendario=calendario)
+
+@app.route("/cursos_planes/calendarios/delete/<int:idcalendario>", methods=["POST"])
+def delete_calendario(idcalendario):
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_calendarios"))
+    
+    cursor = conn.cursor()
+    try:
+        calendarioescolar_crud.delete_calendario(cursor, idcalendario)
+        conn.commit()
+        flash("Calendario eliminado correctamente.", "success")
+    except mysql.connector.Error as err:
+        conn.rollback()
+        flash(f"No se pudo eliminar el calendario: {err}", "danger")
+    finally:
+        cursor.close()
+        conn.close()
+    return redirect(url_for("list_calendarios"))
+
+@app.route("/cursos_planes/calendarios/search")
+def search_calendarios():
+    query_term = request.args.get("query", "").strip()
+    if not query_term:
+        return redirect(url_for("list_calendarios"))
+    
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_calendarios"))
+    
+    cursor = conn.cursor(dictionary=True)
+    calendarios = calendarioescolar_crud.search_calendarios(cursor, query_term)
+    cursor.close()
+    conn.close()
+    flash(f'Mostrando resultados para "{query_term}".', "info")
+    return render_template("cursos/calendarioescolar_list.html", calendarios=calendarios)
+
+
+
+# --- Rutas para Becas ---
+
+@app.route("/finanzas_becas/becas")
+def list_becas():
+    conn = get_db_connection()
+    if conn is None:
+        return render_template("finanzas_becas/beca_list.html", becas=[])
+    cursor = conn.cursor(dictionary=True)
+    becas = becas_crud.list_becas(cursor)
+    cursor.close()
+    conn.close()
+    return render_template("finanzas_becas/beca_list.html", becas=becas)
+
+@app.route("/finanzas_becas/becas/add", methods=["GET", "POST"])
+def add_beca():
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_becas"))
+    cursor = conn.cursor(dictionary=True)
+
+    if request.method == "POST":
+        descripcion = request.form["descripcion_beca"]
+        porcentaje = request.form["porcentaje_beca"]
+        estatus = request.form["estatus_beca"]
+        idtipo_beca = request.form["idtipo_beca"]
+
+        try:
+            becas_crud.add_beca(cursor, descripcion, porcentaje, estatus, idtipo_beca)
+            conn.commit()
+            flash("Beca añadida correctamente.", "success")
+        except mysql.connector.Error as err:
+            conn.rollback()
+            flash(f"Error al añadir beca: {err}", "danger")
+        finally:
+            cursor.close()
+            conn.close()
+        return redirect(url_for("list_becas"))
+
+    # GET
+    tipos_beca = becas_crud.get_tipos_beca(cursor)
+    cursor.close()
+    conn.close()
+    return render_template("finanzas_becas/beca_form.html", beca=None, tipos_beca=tipos_beca)
+
+@app.route("/finanzas_becas/becas/edit/<int:idbeca>", methods=["GET", "POST"])
+def edit_beca(idbeca):
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_becas"))
+    cursor = conn.cursor(dictionary=True)
+
+    if request.method == "POST":
+        descripcion = request.form["descripcion_beca"]
+        porcentaje = request.form["porcentaje_beca"]
+        estatus = request.form["estatus_beca"]
+        idtipo_beca = request.form["idtipo_beca"]
+
+        try:
+            becas_crud.update_beca(cursor, idbeca, descripcion, porcentaje, estatus, idtipo_beca)
+            conn.commit()
+            flash("Beca actualizada correctamente.", "success")
+        except mysql.connector.Error as err:
+            conn.rollback()
+            flash(f"Error al actualizar beca: {err}", "danger")
+        finally:
+            cursor.close()
+            conn.close()
+        return redirect(url_for("list_becas"))
+
+    # GET
+    beca = becas_crud.get_beca(cursor, idbeca)
+    if not beca:
+        flash("Beca no encontrada.", "warning")
+        cursor.close()
+        conn.close()
+        return redirect(url_for("list_becas"))
+
+    tipos_beca = becas_crud.get_tipos_beca(cursor)
+    cursor.close()
+    conn.close()
+    return render_template("finanzas_becas/beca_form.html", beca=beca, tipos_beca=tipos_beca)
+
+@app.route("/finanzas_becas/becas/delete/<int:idbeca>", methods=["POST"])
+def delete_beca(idbeca):
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_becas"))
+    cursor = conn.cursor()
+    try:
+        becas_crud.delete_beca(cursor, idbeca)
+        conn.commit()
+        flash("Beca eliminada correctamente.", "success")
+    except mysql.connector.Error as err:
+        conn.rollback()
+        flash(f"No se pudo eliminar la beca: {err}", "danger")
+    finally:
+        cursor.close()
+        conn.close()
+    return redirect(url_for("list_becas"))
+
+@app.route("/finanzas_becas/becas/search")
+def search_becas():
+    query_term = request.args.get("query", "").strip()
+    if not query_term:
+        return redirect(url_for("list_becas"))
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_becas"))
+    cursor = conn.cursor(dictionary=True)
+    becas = becas_crud.search_becas(cursor, query_term)
+    cursor.close()
+    conn.close()
+    flash(f'Resultados para "{query_term}".', "info")
+    return render_template("finanzas_becas/beca_list.html", becas=becas)
+
 
 @app.route("/finanzas_becas/tipobeca")
 def list_tipobeca():
@@ -657,12 +908,11 @@ def list_tipobeca():
 @app.route("/finanzas_becas/tipobeca/add", methods=["GET", "POST"])
 def add_tipobeca():
     if request.method == "POST":
-        idtipo = request.form["idtipo_beca"]
         nombre = request.form["nombre_tipo"]
         conn = get_db_connection()
         cursor = conn.cursor()
         try:
-            tipobeca_crud.add_tipobeca(cursor, idtipo, nombre)
+            tipobeca_crud.add_tipobeca(cursor, nombre)
             conn.commit()
             flash("Tipo de beca añadido correctamente.", "success")
         except mysql.connector.Error as err:
@@ -864,16 +1114,33 @@ def list_departamentos_asignatura():
 @app.route("/aulas_horarios/departamentos_asignatura/add", methods=["GET", "POST"])
 def add_departamento_asignatura():
     if request.method == "POST":
-        iddep = request.form["iddeptoasignatura"]
         nombre = request.form["nombre_deptoasignatura"]
         conn = get_db_connection()
         cursor = conn.cursor()
         try:
-            departamentoasignatura_crud.add_departamento_asignatura(cursor, iddep, nombre)
+            departamentoasignatura_crud.add_departamento_asignatura(cursor, nombre)
             conn.commit()
             flash("Departamento de asignatura añadido correctamente.", "success")
         except mysql.connector.Error as err:
             conn.rollback()
+            flash(f"Error al añadir departamento: {err}", "danger")
+        finally:
+            cursor.close()
+            conn.close()
+        return redirect(url_for("list_departamentos_asignatura"))
+
+    # GET - render form for adding new departamento
+    return render_template("aulas_horarios/departamentoasignatura_form.html", departamento=None)
+
+@app.route("/aulas_horarios/departamentos_asignatura/edit/<int:iddep>", methods=["GET", "POST"])
+def edit_departamento_asignatura(iddep):
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_departamentos_asignatura"))
+    
+    cursor = conn.cursor(dictionary=True)
+    
+    if request.method == "POST":
         nombre = request.form["nombre_deptoasignatura"]
         try:
             departamentoasignatura_crud.update_departamento_asignatura(cursor, iddep, nombre)
@@ -886,7 +1153,7 @@ def add_departamento_asignatura():
             cursor.close()
             conn.close()
         return redirect(url_for("list_departamentos_asignatura"))
-
+    
     # GET
     departamento = departamentoasignatura_crud.get_departamento_asignatura(cursor, iddep)
     cursor.close()
@@ -894,7 +1161,7 @@ def add_departamento_asignatura():
     if not departamento:
         flash("Departamento no encontrado.", "warning")
         return redirect(url_for("list_departamentos_asignatura"))
-    return render_template("departamentoasignatura_form.html", departamento=departamento)
+    return render_template("aulas_horarios/departamentoasignatura_form.html", departamento=departamento)
 
 @app.route("/aulas_horarios/departamentos_asignatura/delete/<int:iddep>", methods=["POST"])
 def delete_departamento_asignatura(iddep):
@@ -921,7 +1188,7 @@ def search_departamentos_asignatura():
     cursor.close()
     conn.close()
     flash(f'Resultados para "{term}"', "info")
-    return render_template("departamentoasignatura_list.html", departamentos=resultados)
+    return render_template("aulas_horarios/departamentoasignatura_list.html", departamentos=resultados)
 
 
 # --- Rutas para Calificación Estudiante ---
@@ -1061,17 +1328,21 @@ def list_docentes():
 
 @app.route("/docentes/add", methods=["GET", "POST"])
 def add_docente():
-    conn = get_db_connection()
-    if conn is None:
-        return redirect(url_for("list_docentes"))
-    cursor = conn.cursor(dictionary=True)
-
     if request.method == "POST":
-        idpersona = request.form["idpersona"]
-        fecha_alta = request.form["fecha_alta"]
+        nombre = request.form["nombre"]
+        apellido_paterno = request.form["apellido_paterno"]
+        apellido_materno = request.form["apellido_materno"]
+        correo = request.form["correo"]
+        fecha_alta = request.form.get("fecha_alta") or None
         estatus = request.form.get("estatus", "A")
+        
+        conn = get_db_connection()
+        if conn is None:
+            return redirect(url_for("list_docentes"))
+        
+        cursor = conn.cursor(dictionary=True)
         try:
-            docente_crud.add_docente(cursor, idpersona, fecha_alta, estatus)
+            docente_crud.add_docente(cursor, nombre, apellido_paterno, apellido_materno, correo, fecha_alta, estatus)
             conn.commit()
             flash("Docente añadido correctamente.", "success")
         except mysql.connector.Error as err:
@@ -1081,11 +1352,8 @@ def add_docente():
             cursor.close()
             conn.close()
         return redirect(url_for("list_docentes"))
-
-    personas = docente_crud.get_personas_sin_docente(cursor)
-    cursor.close()
-    conn.close()
-    return render_template("docentes/docente_form.html", docente=None, personas=personas)
+    
+    return render_template("docentes/docente_form.html", docente=None)
 
 @app.route("/docentes/edit/<int:iddocente>", methods=["GET", "POST"])
 def edit_docente(iddocente):
@@ -1110,17 +1378,23 @@ def edit_docente(iddocente):
             conn.close()
         return redirect(url_for("list_docentes"))
 
-    docente = docente_crud.get_docente(cursor, iddocente)
-    if not docente:
-        flash("Docente no encontrado.", "warning")
-        cursor.close()
-        conn.close()
-        return redirect(url_for("list_docentes"))
-    
-    personas = []
+    # GET - obtener información completa del docente
+    query = """
+    SELECT d.*, p.nombre, p.apellido_paterno, p.apellido_materno, p.correo
+    FROM docente d
+    JOIN persona p ON d.idpersona = p.idpersona
+    WHERE d.iddocente = %s
+    """
+    cursor.execute(query, (iddocente,))
+    docente = cursor.fetchone()
     cursor.close()
     conn.close()
-    return render_template("docentes/docente_form.html", docente=docente, personas=personas)
+    
+    if not docente:
+        flash("Docente no encontrado.", "warning")
+        return redirect(url_for("list_docentes"))
+    
+    return render_template("docentes/docente_form.html", docente=docente)
 
 @app.route("/docentes/delete/<int:iddocente>", methods=["POST"])
 def delete_docente(iddocente):

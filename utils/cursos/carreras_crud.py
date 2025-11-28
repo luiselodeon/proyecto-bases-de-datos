@@ -16,13 +16,13 @@ def get_departamentos(cursor):
     cursor.execute("SELECT * FROM departamentoacademico ORDER BY iddepartamentoacademico;")
     return cursor.fetchall()
 
-def add_carrera(cursor, idcarrera, descripcion, creditos, iddepto, costo):
+def add_carrera(cursor, descripcion, creditos, iddepto, costo):
     cursor.execute("""
         INSERT INTO carrera
-        (idcarrera, descripcion_carrera, creditos_carrera,
+        (descripcion_carrera, creditos_carrera,
          iddepartamentoacademico, costo_inscripcion)
-        VALUES (%s, %s, %s, %s, %s)
-    """, (idcarrera, descripcion, creditos, iddepto, costo))
+        VALUES (%s, %s, %s, %s)
+    """, (descripcion, creditos, iddepto, costo))
 
 def get_carrera(cursor, idcarrera):
     cursor.execute("""

@@ -19,12 +19,12 @@ def get_tipos_beca(cursor):
     cursor.execute("SELECT idtipo_beca, nombre_tipo FROM tipo_beca ORDER BY idtipo_beca;")
     return cursor.fetchall()
 
-def add_beca(cursor, idbeca, descripcion, porcentaje, estatus, idtipo_beca):
+def add_beca(cursor, descripcion, porcentaje, estatus, idtipo_beca):
     cursor.execute("""
         INSERT INTO beca
-        (idbeca, descripcion_beca, porcentaje_beca, estatus_beca, idtipo_beca)
-        VALUES (%s, %s, %s, %s, %s)
-    """, (idbeca, descripcion, porcentaje, estatus, idtipo_beca))
+        (descripcion_beca, porcentaje_beca, estatus_beca, idtipo_beca)
+        VALUES (%s, %s, %s, %s)
+    """, (descripcion, porcentaje, estatus, idtipo_beca))
 
 def get_beca(cursor, idbeca):
     cursor.execute("""

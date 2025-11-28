@@ -31,13 +31,13 @@
             <tbody>
                 {% for d in departamentos %}
                 <tr>
-                    <td>{{ d.iddepartamentoasignatura }}</td>
-                    <td>{{ d.nombre_departamento }}</td>
+                    <td>{{ d.iddeptoasignatura }}</td>
+                    <td>{{ d.nombre_deptoasignatura }}</td>
                     <td>{{ d.descripcion or 'N/A' }}</td>
                     <td>
-                        <a href="{{ url_for('edit_departamento_asignatura', iddep=d.iddepartamentoasignatura) }}"
+                        <a href="{{ url_for('edit_departamento_asignatura', iddep=d.iddeptoasignatura) }}"
                             class="btn btn-sm btn-warning">Editar</a>
-                        <form action="{{ url_for('delete_departamento_asignatura', iddep=d.iddepartamentoasignatura) }}"
+                        <form action="{{ url_for('delete_departamento_asignatura', iddep=d.iddeptoasignatura) }}"
                             method="post" style="display:inline;" onsubmit="return confirm('¿Eliminar?');">
                             <button type="submit" class="btn btn-sm btn-danger">Eliminar</button>
                         </form>

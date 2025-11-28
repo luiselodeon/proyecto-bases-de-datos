@@ -8,12 +8,12 @@ def list_departamentos_asignatura(cursor):
     """)
     return cursor.fetchall()
 
-def add_departamento_asignatura(cursor, iddep, nombre):
+def add_departamento_asignatura(cursor, nombre):
     cursor.execute("""
         INSERT INTO departamentoasignatura
-        (iddeptoasignatura, nombre_deptoasignatura)
-        VALUES (%s, %s)
-    """, (iddep, nombre))
+        (nombre_deptoasignatura)
+        VALUES (%s)
+    """, (nombre,))
 
 def get_departamento_asignatura(cursor, iddep):
     cursor.execute("""

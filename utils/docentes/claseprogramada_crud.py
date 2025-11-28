@@ -35,7 +35,7 @@ def get_clase(cursor, idclase):
     cursor.execute(query, (idclase,))
     return cursor.fetchone()
 
-def add_clase(cursor, idasignatura, modalidad, idihorario, iddocente, idperiodo, idcalendario, idioma='ESP'):
+def add_clase(cursor, idasignatura, modalidad, idhorario, iddocente, idperiodo, idcalendario, idioma='ESP'):
     """Add new clase programada"""
     query = """
     INSERT INTO claseprogramada (idasignatura, modalidad, idhorario, iddocente, idperiodoinscripciones, idcalendarioescolar, idioma)

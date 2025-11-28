@@ -150,7 +150,6 @@ CREATE TABLE IF NOT EXISTS docente (
     FOREIGN KEY (idpersona) REFERENCES persona(idpersona)
     ON DELETE RESTRICT ON UPDATE CASCADE
 ) 
-AUTO_INCREMENT = 100000
 ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS certificacion (
@@ -253,7 +252,6 @@ CREATE TABLE IF NOT EXISTS estudiante (
     FOREIGN KEY (idestadodecuenta) REFERENCES estadodecuenta(idestadodecuenta)
     ON DELETE RESTRICT ON UPDATE CASCADE
 )
-AUTO_INCREMENT = 5000000
 ENGINE=InnoDB;
 
 /* Historial académico resumido por asignatura y periodo */
@@ -352,7 +350,6 @@ CREATE TABLE IF NOT EXISTS claseprogramada (
     FOREIGN KEY (idcalendarioescolar) REFERENCES calendarioescolar(idcalendarioescolar)
     ON DELETE RESTRICT ON UPDATE CASCADE
 )
-AUTO_INCREMENT = 1000
 ENGINE=InnoDB;
 
 /* ===========================================================
