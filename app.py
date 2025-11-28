@@ -779,121 +779,7 @@ def search_calendarios():
     return render_template("cursos/calendarioescolar_list.html", calendarios=calendarios)
 
 
-
 # --- Rutas para Becas ---
-
-@app.route("/finanzas_becas/becas")
-def list_becas():
-    conn = get_db_connection()
-    if conn is None:
-        return render_template("finanzas_becas/beca_list.html", becas=[])
-    cursor = conn.cursor(dictionary=True)
-    becas = becas_crud.list_becas(cursor)
-    cursor.close()
-    conn.close()
-    return render_template("finanzas_becas/beca_list.html", becas=becas)
-
-@app.route("/finanzas_becas/becas/add", methods=["GET", "POST"])
-def add_beca():
-    conn = get_db_connection()
-    if conn is None:
-        return redirect(url_for("list_becas"))
-    cursor = conn.cursor(dictionary=True)
-
-    if request.method == "POST":
-        descripcion = request.form["descripcion_beca"]
-        porcentaje = request.form["porcentaje_beca"]
-        estatus = request.form["estatus_beca"]
-        idtipo_beca = request.form["idtipo_beca"]
-
-        try:
-            becas_crud.add_beca(cursor, descripcion, porcentaje, estatus, idtipo_beca)
-            conn.commit()
-            flash("Beca añadida correctamente.", "success")
-        except mysql.connector.Error as err:
-            conn.rollback()
-            flash(f"Error al añadir beca: {err}", "danger")
-        finally:
-            cursor.close()
-            conn.close()
-        return redirect(url_for("list_becas"))
-
-    # GET
-    tipos_beca = becas_crud.get_tipos_beca(cursor)
-    cursor.close()
-    conn.close()
-    return render_template("finanzas_becas/beca_form.html", beca=None, tipos_beca=tipos_beca)
-
-@app.route("/finanzas_becas/becas/edit/<int:idbeca>", methods=["GET", "POST"])
-def edit_beca(idbeca):
-    conn = get_db_connection()
-    if conn is None:
-        return redirect(url_for("list_becas"))
-    cursor = conn.cursor(dictionary=True)
-
-    if request.method == "POST":
-        descripcion = request.form["descripcion_beca"]
-        porcentaje = request.form["porcentaje_beca"]
-        estatus = request.form["estatus_beca"]
-        idtipo_beca = request.form["idtipo_beca"]
-
-        try:
-            becas_crud.update_beca(cursor, idbeca, descripcion, porcentaje, estatus, idtipo_beca)
-            conn.commit()
-            flash("Beca actualizada correctamente.", "success")
-        except mysql.connector.Error as err:
-            conn.rollback()
-            flash(f"Error al actualizar beca: {err}", "danger")
-        finally:
-            cursor.close()
-            conn.close()
-        return redirect(url_for("list_becas"))
-
-    # GET
-    beca = becas_crud.get_beca(cursor, idbeca)
-    if not beca:
-        flash("Beca no encontrada.", "warning")
-        cursor.close()
-        conn.close()
-        return redirect(url_for("list_becas"))
-
-    tipos_beca = becas_crud.get_tipos_beca(cursor)
-    cursor.close()
-    conn.close()
-    return render_template("finanzas_becas/beca_form.html", beca=beca, tipos_beca=tipos_beca)
-
-@app.route("/finanzas_becas/becas/delete/<int:idbeca>", methods=["POST"])
-def delete_beca(idbeca):
-    conn = get_db_connection()
-    if conn is None:
-        return redirect(url_for("list_becas"))
-    cursor = conn.cursor()
-    try:
-        becas_crud.delete_beca(cursor, idbeca)
-        conn.commit()
-        flash("Beca eliminada correctamente.", "success")
-    except mysql.connector.Error as err:
-        conn.rollback()
-        flash(f"No se pudo eliminar la beca: {err}", "danger")
-    finally:
-        cursor.close()
-        conn.close()
-    return redirect(url_for("list_becas"))
-
-@app.route("/finanzas_becas/becas/search")
-def search_becas():
-    query_term = request.args.get("query", "").strip()
-    if not query_term:
-        return redirect(url_for("list_becas"))
-    conn = get_db_connection()
-    if conn is None:
-        return redirect(url_for("list_becas"))
-    cursor = conn.cursor(dictionary=True)
-    becas = becas_crud.search_becas(cursor, query_term)
-    cursor.close()
-    conn.close()
-    flash(f'Resultados para "{query_term}".', "info")
-    return render_template("finanzas_becas/beca_list.html", becas=becas)
 
 
 @app.route("/finanzas_becas/tipobeca")
@@ -983,8 +869,6 @@ def search_tipobeca():
     return render_template("finanzas_becas/tipobeca_list.html", tipos=tipos)
 
 
-# --- Rutas para Beca ---
-
 @app.route("/finanzas_becas/becas")
 @role_required("finanzas_becas")
 def list_becas():
@@ -1004,14 +888,13 @@ def add_beca():
     cursor = conn.cursor(dictionary=True)
 
     if request.method == "POST":
-        idbeca = request.form["idbeca"]
         descripcion = request.form["descripcion_beca"]
         porcentaje = request.form.get("porcentaje_beca") or None
         estatus = request.form.get("estatus_beca") or None
         idtipo_beca = request.form.get("idtipo_beca") or None
 
         try:
-            becas_crud.add_beca(cursor, idbeca, descripcion, porcentaje, estatus, idtipo_beca)
+            becas_crud.add_beca(cursor, descripcion, porcentaje, estatus, idtipo_beca)
             conn.commit()
             flash("Beca añadida correctamente.", "success")
         except mysql.connector.Error as err:
