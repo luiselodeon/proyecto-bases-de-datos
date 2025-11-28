@@ -145,6 +145,7 @@ CREATE TABLE IF NOT EXISTS docente (
   fecha_alta    DATE NOT NULL,
   fecha_baja    DATE NULL,
   estatus       ENUM('A','B') NOT NULL DEFAULT 'A', -- Activo / Baja
+  CONSTRAINT uq_docente_persona UNIQUE (idpersona),
   CONSTRAINT fk_docente_persona
     FOREIGN KEY (idpersona) REFERENCES persona(idpersona)
     ON DELETE RESTRICT ON UPDATE CASCADE

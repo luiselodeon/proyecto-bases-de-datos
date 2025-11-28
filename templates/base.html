@@ -62,6 +62,7 @@
               <li><a class="dropdown-item" href="{{ url_for('list_asignaturas') }}">Asignaturas</a></li>
               <li><a class="dropdown-item" href="{{ url_for('list_periodos') }}">Periodos de Inscripción</a></li>
               <li><a class="dropdown-item" href="{{ url_for('list_prerequisitos') }}">Requisitos Programa</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('list_planestudios') }}">Planes de Estudio</a></li>
             </ul>
           </li>
 
@@ -69,14 +70,14 @@
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
               Calificaciones
-            </a>
-            <ul class="dropdown-menu">
-              <li><a class="dropdown-item" href="{{ url_for('list_evaluaciones') }}">Registro de Notas</a></li>
-              <li><a class="dropdown-item" href="{{ url_for('list_calificacion_estudiante') }}">Calificación
-                  Estudiante</a></li>
-              <li><a class="dropdown-item"
-                  href="{{ url_for('placeholder', section='reportes_evaluacion') }}">Reportes</a></li>
-            </ul>
+          </a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="{{ url_for('list_evaluaciones') }}">Registro de Notas</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('list_calificacion_estudiante') }}">Calificación
+                Estudiante</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('placeholder', section='reportes_evaluacion') }}">Reportes</a>
+            </li>
+          </ul>
           </li>
 
           <!-- Asistencia -->

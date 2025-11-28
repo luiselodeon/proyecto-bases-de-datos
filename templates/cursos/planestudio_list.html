@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block title %}Planes de Estudio{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Planes de Estudio</h1>
+    <a href="{{ url_for('add_planestudio') }}" class="btn btn-primary">Añadir Plan de Estudio</a>
+</div>
+
+<!-- Search Form -->
+<form action="{{ url_for('search_planestudios') }}" method="get" class="mb-4">
+    <div class="input-group">
+        <input type="text" name="query" class="form-control" placeholder="Buscar por nombre de plan o carrera...">
+        <button type="submit" class="btn btn-outline-secondary">Buscar</button>
+    </div>
+</form>
+
+<!-- Tabla de Planes de Estudio -->
+<div class="card">
+    <div class="card-header">Lista de Planes de Estudio</div>
+    <div class="card-body">
+        <table class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre del Plan</th>
+                    <th>Carrera</th>
+                    <th>Vigencia Inicio</th>
+                    <th>Vigencia Fin</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for plan in planes %}
+                <tr>
+                    <td>{{ plan.idplanestudio }}</td>
+                    <td>{{ plan.nombre_plan }}</td>
+                    <td>{{ plan.descripcion_carrera }}</td>
+                    <td>{{ plan.vigencia_inicio }}</td>
+                    <td>{{ plan.vigencia_fin or 'Vigente' }}</td>
+                    <td>
+                        <a href="{{ url_for('edit_planestudio', idplanestudio=plan.idplanestudio) }}"
+                            class="btn btn-sm btn-warning">Editar</a>
+                        <form action="{{ url_for('delete_planestudio', idplanestudio=plan.idplanestudio) }}"
+                            method="post" style="display:inline;"
+                            onsubmit="return confirm('¿Eliminar plan de estudio?');">
+                            <button type="submit" class="btn btn-sm btn-danger">Eliminar</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center">No hay planes de estudio registrados.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}
