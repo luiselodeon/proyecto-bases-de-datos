@@ -33,14 +33,14 @@
         </select>
         {% if historial %}<input type="hidden" name="idasignatura" value="{{ historial.idasignatura }}">{% endif %}
     </div>
-
     <div class="mb-3">
         <label for="idperiodo" class="form-label">Periodo</label>
         <select class="form-select" id="idperiodo" name="idperiodo" required {{ 'disabled' if historial else '' }}>
             <option value="">Seleccione periodo</option>
             {% for per in periodos %}
-            <option value="{{ per.idperiodoinscripciones }}" {% if historial and historial.idperiodo==per.idperiodoinsc
-                ripciones %}selected{% endif %}>{{ per.descripcion_periodo }}</option>
+            <option value="{{ per.idperiodoinscripciones }}" {% if historial and
+                historial.idperiodo==per.idperiodoinscripciones %}selected{% endif %}>{{ per.descripcion_periodo }}
+            </option>
             {% endfor %}
         </select>
         {% if historial %}<input type="hidden" name="idperiodo" value="{{ historial.idperiodo }}">{% endif %}

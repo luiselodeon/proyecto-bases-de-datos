@@ -8,7 +8,7 @@
         <select class="form-select" id="matricula_alumno" name="matricula_alumno" required {{ 'disabled' if inscripcion
             else '' }}>
             <option value="">Seleccione estudiante</option>
-            {% for est in estimudiantes %}
+            {% for est in estudiantes %}
             <option value="{{ est.matricula_alumno }}" {% if inscripcion and
                 inscripcion.matricula_alumno==est.matricula_alumno %}selected{% endif %}>{{ est.nombre_completo }}
             </option>
