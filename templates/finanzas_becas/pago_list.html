@@ -1,32 +1,41 @@
 {% extends 'base.html' %}
 {% block title %}Pagos{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2>Administración de Pagos</h2>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Administración de Pagos</h1>
     <a href="{{ url_for('add_pago') }}" class="btn btn-primary">Registrar Pago</a>
 </div>
-<table class="table table-striped table-hover">
-    <thead class="table-dark">
-        <tr>
-            <th>Estudiante</th>
-            <th>Saldo Inicial</th>
-            <th>Saldo Actual</th>
-            <th>Monto Pagado</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for p in pagos %}
-        <tr>
-            <td>{{ p.nombre_estudiante }} ({{ p.matricula_alumno }})</td>
-            <td>${{ p.saldo_inicial }}</td>
-            <td>${{ p.saldo_actual }}</td>
-            <td>${{ p.monto_pagado }}</td>
-        </tr>
-        {% else %}
-        <tr>
-            <td colspan="4" class="text-center">No hay pagos registrados.</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+
+<!-- Tabla de Pagos -->
+<div class="card">
+    <div class="card-header">Historial de Pagos</div>
+    <div class="card-body">
+        <table class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th>Estudiante</th>
+                    <th>Saldo Inicial</th>
+                    <th>Saldo Actual</th>
+                    <th>Monto Pagado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in pagos %}
+                <tr>
+                    <td>{{ p.nombre_estudiante }} ({{ p.matricula_alumno }})</td>
+                    <td>${{ p.saldo_inicial }}</td>
+                    <td>${{ p.saldo_actual }}</td>
+                    <td>${{ p.monto_pagado }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" class="text-center">No hay pagos registrados.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
 {% endblock %}

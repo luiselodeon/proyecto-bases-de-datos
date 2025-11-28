@@ -1,50 +1,62 @@
 {% extends 'base.html' %}
-{% block title %}Registro de Notas (Evaluaciones){% endblock %}
+{%block title %}Registro de Notas{{%endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2>Registro de Notas (Evaluaciones)</h2>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Registro de Notas (Evaluaciones)</h1>
     <a href="{{ url_for('add_evaluacion') }}" class="btn btn-primary">Añadir Evaluación</a>
 </div>
-<form action="{{ url_for('search_evaluaciones') }}" method="get" class="mb-3 d-flex">
-    <input type="text" name="query" class="form-control me-2" placeholder="Buscar...">
-    <button type="submit" class="btn btn-outline-success">Buscar</button>
-    <a href="{{ url_for('list_evaluaciones') }}" class="btn btn-outline-secondary ms-2">Limpiar</a>
+
+<!-- Search Form -->
+<form action="{{ url_for('search_evaluaciones') }}" method="get" class="mb-4">
+    <div class="input-group">
+        <input type="text" name="query" class="form-control" placeholder="Buscar por asignatura, periodo o tipo...">
+        <button type="submit" class="btn btn-outline-secondary">Buscar</button>
+    </div>
 </form>
-<table class="table table-striped table-hover">
-    <thead class="table-dark">
-        <tr>
-            <th>Asignatura</th>
-            <th>Periodo</th>
-            <th>Tipo</th>
-            <th>Descripción</th>
-            <th>Fecha</th>
-            <th>Porcentaje</th>
-            <th>Acciones</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for e in evaluaciones %}
-        <tr>
-            <td>{{ e.nombre_asignatura }}</td>
-            <td>{{ e.descripcion_periodo }}</td>
-            <td>{{ e.tipo_actividad }}</td>
-            <td>{{ e.descripcion or 'N/A' }}</td>
-            <td>{{ e.fecha_aplicacion or 'N/A' }}</td>
-            <td>{{ e.porcentaje }}%</td>
-            <td>
-                <a href="{{ url_for('edit_evaluacion', idevaluacion=e.idevaluacion) }}"
-                    class="btn btn-sm btn-warning">Editar</a>
-                <form action="{{ url_for('delete_evaluacion', idevaluacion=e.idevaluacion) }}" method="POST"
-                    style="display:inline;" onsubmit="return confirm('¿Eliminar?');">
-                    <button type="submit" class="btn btn-sm btn-danger">Eliminar</button>
-                </form>
-            </td>
-        </tr>
-        {% else %}
-        <tr>
-            <td colspan="7" class="text-center">No hay evaluaciones.</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+
+<!-- Tabla de Evaluaciones -->
+<div class="card">
+    <div class="card-header">Lista de Evaluaciones</div>
+    <div class="card-body">
+        <table class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th>Asignatura</th>
+                    <th>Periodo</th>
+                    <th>Tipo</th>
+                    <th>Descripción</th>
+                    <th>Fecha</th>
+                    <th>Porcentaje</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for e in evaluaciones %}
+                <tr>
+                    <td>{{ e.nombre_asignatura }}</td>
+                    <td>{{ e.descripcion_periodo }}</td>
+                    <td>{{ e.tipo_actividad }}</td>
+                    <td>{{ e.descripcion or 'N/A' }}</td>
+                    <td>{{ e.fecha_aplicacion or 'N/A' }}</td>
+                    <td>{{ e.porcentaje }}%</td>
+                    <td>
+                        <a href="{{ url_for('edit_evaluacion', idevaluacion=e.idevaluacion) }}"
+                            class="btn btn-sm btn-warning">Editar</a>
+                        <form action="{{ url_for('delete_evaluacion', idevaluacion=e.idevaluacion) }}" method="post"
+                            style="display:inline;" onsubmit="return confirm('¿Eliminar?');">
+                            <button type="submit" class="btn btn-sm btn-danger">Eliminar</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center">No hay evaluaciones.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
 {% endblock %}
