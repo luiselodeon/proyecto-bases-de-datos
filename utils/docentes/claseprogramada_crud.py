@@ -11,19 +11,22 @@ def list_clases(cursor):
         cp.iddocente,
         cp.idperiodoinscripciones,
         cp.idcalendarioescolar,
+        cp.idaula,
         cp.idioma,
         a.nombre_asignatura,
         CONCAT(p.nombre, ' ', p.apellido_paterno, ' ', IFNULL(p.apellido_materno, '')) AS nombre_docente,
         pi.descripcion_periodo,
         h.dia_semana,
         h.hora_inicio,
-        h.hora_fin
+        h.hora_fin,
+        au.descripcion_aula
     FROM claseprogramada cp
     JOIN asignatura a ON cp.idasignatura = a.idasignatura
     JOIN docente d ON cp.iddocente = d.iddocente
     JOIN persona p ON d.idpersona = p.idpersona
     JOIN periodoinscripciones pi ON cp.idperiodoinscripciones = pi.idperiodoinscripciones
     JOIN horario h ON cp.idhorario = h.idhorario
+    JOIN aula au ON cp.idaula = au.idaula
     ORDER BY pi.descripcion_periodo DESC, a.nombre_asignatura
     """
     cursor.execute(query)
@@ -35,24 +38,24 @@ def get_clase(cursor, idclase):
     cursor.execute(query, (idclase,))
     return cursor.fetchone()
 
-def add_clase(cursor, idasignatura, modalidad, idhorario, iddocente, idperiodo, idcalendario, idioma='ESP'):
+def add_clase(cursor, idasignatura, modalidad, idhorario, iddocente, idperiodo, idcalendario, idaula, idioma='ESP'):
     """Add new clase programada"""
     query = """
-    INSERT INTO claseprogramada (idasignatura, modalidad, idhorario, iddocente, idperiodoinscripciones, idcalendarioescolar, idioma)
-    VALUES (%s, %s, %s, %s, %s, %s, %s)
+    INSERT INTO claseprogramada (idasignatura, modalidad, idhorario, iddocente, idperiodoinscripciones, idcalendarioescolar, idaula, idioma)
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
     """
-    cursor.execute(query, (idasignatura, modalidad, idhorario, iddocente, idperiodo, idcalendario, idioma))
+    cursor.execute(query, (idasignatura, modalidad, idhorario, iddocente, idperiodo, idcalendario, idaula, idioma))
     return cursor.lastrowid
 
-def update_clase(cursor, idclase, idasignatura, modalidad, idhorario, iddocente, idperiodo, idcalendario, idioma):
+def update_clase(cursor, idclase, idasignatura, modalidad, idhorario, iddocente, idperiodo, idcalendario, idaula, idioma):
     """Update clase programada"""
     query = """
     UPDATE claseprogramada
     SET idasignatura = %s, modalidad = %s, idhorario = %s, iddocente = %s, 
-        idperiodoinscripciones = %s, idcalendarioescolar = %s, idioma = %s
+        idperiodoinscripciones = %s, idcalendarioescolar = %s, idaula = %s, idioma = %s
     WHERE idclaseprogramada = %s
     """
-    cursor.execute(query, (idasignatura, modalidad, idhorario, iddocente, idperiodo, idcalendario, idioma, idclase))
+    cursor.execute(query, (idasignatura, modalidad, idhorario, iddocente, idperiodo, idcalendario, idaula, idioma, idclase))
 
 def delete_clase(cursor, idclase):
     """Delete clase programada"""
@@ -101,6 +104,12 @@ def get_calendarios(cursor):
     cursor.execute(query)
     return cursor.fetchall()
 
+def get_aulas(cursor):
+    """Get list of aulas for dropdown"""
+    query = "SELECT idaula, descripcion_aula, capacidad FROM aula ORDER BY descripcion_aula"
+    cursor.execute(query)
+    return cursor.fetchall()
+
 def search_clases(cursor, query_term):
     """Search clases by asignatura or docente name"""
     query = """
@@ -112,19 +121,22 @@ def search_clases(cursor, query_term):
         cp.iddocente,
         cp.idperiodoinscripciones,
         cp.idcalendarioescolar,
+        cp.idaula,
         cp.idioma,
         a.nombre_asignatura,
         CONCAT(p.nombre, ' ', p.apellido_paterno, ' ', IFNULL(p.apellido_materno, '')) AS nombre_docente,
         pi.descripcion_periodo,
         h.dia_semana,
         h.hora_inicio,
-        h.hora_fin
+        h.hora_fin,
+        au.descripcion_aula
     FROM claseprogramada cp
     JOIN asignatura a ON cp.idasignatura = a.idasignatura
     JOIN docente d ON cp.iddocente = d.iddocente
     JOIN persona p ON d.idpersona = p.idpersona
     JOIN periodoinscripciones pi ON cp.idperiodoinscripciones = pi.idperiodoinscripciones
     JOIN horario h ON cp.idhorario = h.idhorario
+    JOIN aula au ON cp.idaula = au.idaula
     WHERE a.nombre_asignatura LIKE %s 
        OR p.nombre LIKE %s
        OR p.apellido_paterno LIKE %s

@@ -3,8 +3,10 @@
 {% block title %}{{ 'Editar' if student else 'Añadir' }} Estudiante{% endblock %}
 
 {% block content %}
+
 <h1>{{ 'Editar' if student else 'Añadir' }} Estudiante</h1>
 <hr>
+
 <form method="post">
     <div class="mb-3">
         <label for="nombre" class="form-label">Nombre</label>
@@ -36,11 +38,6 @@
             <option value="{{ carrera.idcarrera }}">{{ carrera.descripcion_carrera }}</option>
             {% endfor %}
         </select>
-    </div>
-
-    <div class="mb-3">
-        <label for="matricula" class="form-label">Matrícula</label>
-        <input type="number" class="form-control" id="matricula" name="matricula" required>
     </div>
     {% endif %}
 

@@ -55,6 +55,17 @@
         </select>
     </div>
     <div class="mb-3">
+        <label for="idaula" class="form-label">Aula</label>
+        <select class="form-select" id="idaula" name="idaula" required>
+            <option value="">Seleccione aula</option>
+            {% for au in aulas %}
+            <option value="{{ au.idaula }}" {% if clase and clase.idaula==au.idaula %}selected{% endif %}>
+                {{ au.descripcion_aula }} (Cap: {{ au.capacidad }})
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="mb-3">
         <label for="modalidad" class="form-label">Modalidad</label>
         <select class="form-select" id="modalidad" name="modalidad" required>
             <option value="PRESENCIAL" {% if clase and clase.modalidad=='PRESENCIAL' %}selected{% endif %}>Presencial

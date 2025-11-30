@@ -17,7 +17,7 @@ def list_students(cursor):
     cursor.execute(query)
     return cursor.fetchall()
 
-def add_student(cursor, matricula, nombre, apellido_paterno, apellido_materno, correo, idcarrera):
+def add_student(cursor, nombre, apellido_paterno, apellido_materno, correo, idcarrera):
     # 1. Obtener el siguiente ID para persona y estado de cuenta
     cursor.execute("SELECT MAX(idpersona) FROM persona")
     result = cursor.fetchone()
@@ -47,9 +47,9 @@ def add_student(cursor, matricula, nombre, apellido_paterno, apellido_materno, c
     # 5. Insertar en `estudiante`
     fecha_hoy = date.today()
     sql_estudiante = """INSERT INTO estudiante 
-                        (matricula_alumno, idpersona, idcarrera, idplanestudio, idestadodecuenta, fecha_ingreso) 
-                        VALUES (%s, %s, %s, %s, %s, %s)"""
-    cursor.execute(sql_estudiante, (matricula, next_id_persona, idcarrera, idplanestudio, next_id_estado_cuenta, fecha_hoy))
+                        (idpersona, idcarrera, idplanestudio, idestadodecuenta, fecha_ingreso) 
+                        VALUES (%s, %s, %s, %s, %s)"""
+    cursor.execute(sql_estudiante, (next_id_persona, idcarrera, idplanestudio, next_id_estado_cuenta, fecha_hoy))
 
 def get_student(cursor, matricula):
     query = """

@@ -76,7 +76,6 @@ def add_student():
 
         # 1. Recoger datos del formulario
         form_data = {
-            "matricula": request.form["matricula"],
             "nombre": request.form["nombre"],
             "apellido_paterno": request.form["apellido_paterno"],
             "apellido_materno": request.form["apellido_materno"],
@@ -102,7 +101,6 @@ def add_student():
             # conn.start_transaction()
             students_crud.add_student(
                 cursor,
-                form_data["matricula"],
                 form_data["nombre"],
                 form_data["apellido_paterno"],
                 form_data["apellido_materno"],
@@ -388,14 +386,19 @@ def edit_carrera(idcarrera):
     cursor.execute("SELECT * FROM carrera WHERE idcarrera = %s", (idcarrera,))
     carrera = cursor.fetchone()
 
+    if carrera is None:
+        cursor.close()
+        conn.close()
+        flash("La carrera no existe.", "danger")
+        return redirect(url_for("list_carreras"))
+    
+    # Fetch departamentos for dropdown
+    departamentos = carreras_crud.get_departamentos(cursor)
+
     cursor.close()
     conn.close()
 
-    if carrera is None:
-        flash("La carrera no existe.", "danger")
-        return redirect(url_for("list_carreras"))
-
-    return render_template("cursos/carrera_form.html", carrera=carrera)
+    return render_template("cursos/carrera_form.html", carrera=carrera, departamentos=departamentos)
 
 
 @app.route("/cursos_planes/carreras/delete/<int:idcarrera>", methods=["POST"])
@@ -2257,8 +2260,7 @@ def add_inscripcion():
     if request.method == "POST":
         form_data = {
             "matricula": request.form.get("matricula_alumno"),
-            "idperiodo": request.form.get("idperiodo"),
-            "fecha": request.form.get("fecha_inscripcion"),
+            "idclaseprogramada": request.form.get("idclaseprogramada"),
             "motivo": request.form.get("motivo_inscripcion") or None,
             "estatus": request.form.get("estatus", "INICIADA")
         }
@@ -2280,15 +2282,14 @@ def add_inscripcion():
             inscripcion_crud.add_inscripcion(
                 cursor,
                 form_data["matricula"],
-                form_data["idperiodo"],
-                form_data["fecha"],
+                form_data["idclaseprogramada"],
                 form_data["motivo"],
                 form_data["estatus"]
             )
             conn.commit()
             flash("Inscripción añadida correctamente.", "success")
 
-        except mysql.connector.Error as err:
+        except Exception as err:
             conn.rollback()
             flash(f"Error: {err}", "danger")
 
@@ -2300,7 +2301,7 @@ def add_inscripcion():
 
     # GET
     estudiantes = inscripcion_crud.get_estudiantes(cursor)
-    periodos = inscripcion_crud.get_periodos(cursor)
+    clases_programadas = inscripcion_crud.get_clases_programadas(cursor)
 
     cursor.close()
     conn.close()
@@ -2309,7 +2310,7 @@ def add_inscripcion():
         "estudiantes/inscripcion_form.html",
         inscripcion=None,
         estudiantes=estudiantes,
-        periodos=periodos
+        clases_programadas=clases_programadas
     )
 
 
@@ -2325,7 +2326,7 @@ def edit_inscripcion(idinscripcion):
 
     if request.method == "POST":
         form_data = {
-            "fecha": request.form.get("fecha_inscripcion"),
+            "idclaseprogramada": request.form.get("idclaseprogramada"),
             "motivo": request.form.get("motivo_inscripcion") or None,
             "estatus": request.form.get("estatus")
         }
@@ -2347,14 +2348,14 @@ def edit_inscripcion(idinscripcion):
             inscripcion_crud.update_inscripcion(
                 cursor,
                 idinscripcion,
-                form_data["fecha"],
+                form_data["idclaseprogramada"],
                 form_data["motivo"],
                 form_data["estatus"]
             )
             conn.commit()
             flash("Inscripción actualizada correctamente.", "success")
 
-        except mysql.connector.Error as err:
+        except Exception as err:
             conn.rollback()
             flash(f"Error: {err}", "danger")
 
@@ -2374,7 +2375,7 @@ def edit_inscripcion(idinscripcion):
         return redirect(url_for("list_inscripciones"))
 
     estudiantes = inscripcion_crud.get_estudiantes(cursor)
-    periodos = inscripcion_crud.get_periodos(cursor)
+    clases_programadas = inscripcion_crud.get_clases_programadas(cursor)
 
     cursor.close()
     conn.close()
@@ -2383,7 +2384,7 @@ def edit_inscripcion(idinscripcion):
         "estudiantes/inscripcion_form.html",
         inscripcion=inscripcion,
         estudiantes=estudiantes,
-        periodos=periodos
+        clases_programadas=clases_programadas
     )
 
 
@@ -2476,6 +2477,7 @@ def add_clase():
                 form_data["iddocente"],
                 form_data["idperiodo"],
                 form_data["idcalendario"],
+                request.form.get("idaula"),
                 form_data["idioma"]
             )
             conn.commit()
@@ -2497,6 +2499,7 @@ def add_clase():
     horarios = claseprogramada_crud.get_horarios(cursor)
     periodos = claseprogramada_crud.get_periodos(cursor)
     calendarios = claseprogramada_crud.get_calendarios(cursor)
+    aulas = claseprogramada_crud.get_aulas(cursor)
 
     cursor.close()
     conn.close()
@@ -2508,7 +2511,8 @@ def add_clase():
         docentes=docentes,
         horarios=horarios,
         periodos=periodos,
-        calendarios=calendarios
+        calendarios=calendarios,
+        aulas=aulas
     )
 
 
@@ -2555,6 +2559,7 @@ def edit_clase(idclase):
                 form_data["iddocente"],
                 form_data["idperiodo"],
                 form_data["idcalendario"],
+                request.form.get("idaula"),
                 form_data["idioma"]
             )
             conn.commit()
@@ -2584,6 +2589,7 @@ def edit_clase(idclase):
     horarios = claseprogramada_crud.get_horarios(cursor)
     periodos = claseprogramada_crud.get_periodos(cursor)
     calendarios = claseprogramada_crud.get_calendarios(cursor)
+    aulas = claseprogramada_crud.get_aulas(cursor)
 
     cursor.close()
     conn.close()
@@ -2595,7 +2601,8 @@ def edit_clase(idclase):
         docentes=docentes,
         horarios=horarios,
         periodos=periodos,
-        calendarios=calendarios
+        calendarios=calendarios,
+        aulas=aulas
     )
 
 

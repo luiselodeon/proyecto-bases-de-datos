@@ -16,7 +16,7 @@ def generate_schema_from_table(cursor, table_name):
                      "iddeptoasignatura", "idcarrera", "idplanestudio", "idasignatura", "iddocente", "idcertificacion",
                        "idcapacitacion", "idtipo_beca", "idbeca", "idestadodecuenta", "matricula_alumno", "idhistorialacademico",
                          "idperiodoinscripciones", "idcalendarioescolar", "idaula", "idhorario", "idclaseprogramada", "idinscripcion",
-                           "idasistencia", "idevaluacion", "idpago", "fecha_ingreso", "estatus", "vigencia_fin"):
+                           "idasistencia", "idevaluacion", "idpago", "fecha_ingreso", "estatus", "vigencia_fin", "fecha_inscripcion"):
             continue
 
         # VARCHAR
