@@ -386,14 +386,19 @@ def edit_carrera(idcarrera):
     cursor.execute("SELECT * FROM carrera WHERE idcarrera = %s", (idcarrera,))
     carrera = cursor.fetchone()
 
+    if carrera is None:
+        cursor.close()
+        conn.close()
+        flash("La carrera no existe.", "danger")
+        return redirect(url_for("list_carreras"))
+    
+    # Fetch departamentos for dropdown
+    departamentos = carreras_crud.get_departamentos(cursor)
+
     cursor.close()
     conn.close()
 
-    if carrera is None:
-        flash("La carrera no existe.", "danger")
-        return redirect(url_for("list_carreras"))
-
-    return render_template("cursos/carrera_form.html", carrera=carrera)
+    return render_template("cursos/carrera_form.html", carrera=carrera, departamentos=departamentos)
 
 
 @app.route("/cursos_planes/carreras/delete/<int:idcarrera>", methods=["POST"])
