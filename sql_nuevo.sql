@@ -104,7 +104,9 @@ CREATE TABLE IF NOT EXISTS asignatura (
   CONSTRAINT uq_asignatura_clave UNIQUE (clave_asignatura),
   CONSTRAINT fk_asignatura_depto
     FOREIGN KEY (iddeptoasignatura) REFERENCES departamentoasignatura(iddeptoasignatura)
-    ON DELETE RESTRICT ON UPDATE CASCADE
+    ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT chk_asignatura_valores CHECK (creditos_asignatura BETWEEN 1 AND 12
+    AND (horas_por_sesion IS NULL OR horas_por_sesion > 0) )
 ) ENGINE=InnoDB;
 
 -- Asignaturas por plan de estudio (semestres, obligatoria/optativa)
@@ -148,9 +150,9 @@ CREATE TABLE IF NOT EXISTS docente (
   CONSTRAINT uq_docente_persona UNIQUE (idpersona),
   CONSTRAINT fk_docente_persona
     FOREIGN KEY (idpersona) REFERENCES persona(idpersona)
-    ON DELETE RESTRICT ON UPDATE CASCADE
-) 
-ENGINE=InnoDB;
+    ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT chk_docente_fecha CHECK (fecha_baja >= fecha_alta) 
+)ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS certificacion (
   idcertificacion     INT AUTO_INCREMENT PRIMARY KEY,
