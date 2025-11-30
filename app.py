@@ -2914,15 +2914,18 @@ def add_evaluacion():
 
     cursor = conn.cursor(dictionary=True)
 
-
     if request.method == "POST":
-        form_data = dict(request.form)
+        form_data = request.form
 
-        # Validación automática
-        success, validated = validate_form_from_table(cursor, "evaluaciones", form_data)
+        idclase = form_data.get("idclase")
+        tipo = form_data.get("tipo")
+        descripcion = form_data.get("descripcion") or None
+        fecha = form_data.get("fecha") or None
+        porcentaje = form_data.get("porcentaje") or None
 
-        if not success:
-            flash(f"Error de validación: {validated}", "danger")
+        # Validación sencilla
+        if not idclase or not tipo:
+            flash("La clase y el tipo de evaluación son obligatorios.", "danger")
             cursor.close()
             conn.close()
             return redirect(url_for("add_evaluacion"))
@@ -2930,11 +2933,11 @@ def add_evaluacion():
         try:
             evaluacion_crud.add_evaluacion(
                 cursor,
-                validated["idclase"],
-                validated["tipo"],
-                validated.get("descripcion"),
-                validated.get("fecha"),
-                validated.get("porcentaje")
+                idclase,
+                tipo,
+                descripcion,
+                fecha,
+                porcentaje
             )
             conn.commit()
             flash("Evaluación añadida correctamente.", "success")
@@ -2947,14 +2950,16 @@ def add_evaluacion():
 
         return redirect(url_for("list_evaluaciones"))
 
+    # GET: cargar combos
     clases = evaluacion_crud.get_clases(cursor)
     cursor.close()
     conn.close()
 
-    return render_template("calificaciones/evaluacion_form.html",
-                           evaluacion=None,
-                           clases=clases)
-
+    return render_template(
+        "calificaciones/evaluacion_form.html",
+        evaluacion=None,
+        clases=clases
+    )
 
 @app.route("/calificaciones/evaluaciones/edit/<int:idevaluacion>", methods=["GET", "POST"])
 def edit_evaluacion(idevaluacion):
@@ -2964,15 +2969,16 @@ def edit_evaluacion(idevaluacion):
 
     cursor = conn.cursor(dictionary=True)
 
-
     if request.method == "POST":
-        form_data = dict(request.form)
+        form_data = request.form
 
-        # Validar formulario
-        success, validated = validate_form_from_table(cursor, "evaluaciones", form_data)
+        tipo = form_data.get("tipo")
+        descripcion = form_data.get("descripcion") or None
+        fecha = form_data.get("fecha") or None
+        porcentaje = form_data.get("porcentaje") or None
 
-        if not success:
-            flash(f"Error de validación: {validated}", "danger")
+        if not tipo:
+            flash("El tipo de evaluación es obligatorio.", "danger")
             cursor.close()
             conn.close()
             return redirect(url_for("edit_evaluacion", idevaluacion=idevaluacion))
@@ -2981,10 +2987,10 @@ def edit_evaluacion(idevaluacion):
             evaluacion_crud.update_evaluacion(
                 cursor,
                 idevaluacion,
-                validated["tipo"],
-                validated.get("descripcion"),
-                validated.get("fecha"),
-                validated.get("porcentaje")
+                tipo,
+                descripcion,
+                fecha,
+                porcentaje
             )
             conn.commit()
             flash("Evaluación actualizada correctamente.", "success")
@@ -2997,6 +3003,7 @@ def edit_evaluacion(idevaluacion):
 
         return redirect(url_for("list_evaluaciones"))
 
+    # GET: cargar datos existentes + combos
     evaluacion = evaluacion_crud.get_evaluacion(cursor, idevaluacion)
     if not evaluacion:
         flash("Evaluación no encontrada.", "warning")
@@ -3008,9 +3015,12 @@ def edit_evaluacion(idevaluacion):
     cursor.close()
     conn.close()
 
-    return render_template("calificaciones/evaluacion_form.html",
-                           evaluacion=evaluacion,
-                           clases=clases)
+    return render_template(
+        "calificaciones/evaluacion_form.html",
+        evaluacion=evaluacion,
+        clases=clases
+    )
+
 
 
 @app.route("/calificaciones/evaluaciones/delete/<int:idevaluacion>", methods=["POST"])
