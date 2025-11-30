@@ -76,7 +76,6 @@ def add_student():
 
         # 1. Recoger datos del formulario
         form_data = {
-            "matricula": request.form["matricula"],
             "nombre": request.form["nombre"],
             "apellido_paterno": request.form["apellido_paterno"],
             "apellido_materno": request.form["apellido_materno"],
@@ -102,7 +101,6 @@ def add_student():
             # conn.start_transaction()
             students_crud.add_student(
                 cursor,
-                form_data["matricula"],
                 form_data["nombre"],
                 form_data["apellido_paterno"],
                 form_data["apellido_materno"],
