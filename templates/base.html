@@ -30,7 +30,7 @@
           <!-- Gestión de Estudiantes -->
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-              Gestión de Estudiantes
+              Estudiantes
             </a>
             <ul class="dropdown-menu">
               <li><a class="dropdown-item" href="{{ url_for('index') }}">Registro y Consulta</a></li>
@@ -42,7 +42,7 @@
           <!-- Gestión de Docentes -->
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-              Gestión de Docentes
+              Docentes
             </a>
             <ul class="dropdown-menu">
               <li><a class="dropdown-item" href="{{ url_for('list_docentes') }}">Administración Personal</a></li>
@@ -126,20 +126,18 @@
           {% endif %}
 
           {% if session.get('user_rol') == 'admin' %}
-          <!-- Reportes y Administración de Usuarios -->
-          <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('placeholder', section='reportes_estadisticas') }}">Reportes</a>
-          </li>
-
+          <!-- Dropdown "Más" -->
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-              Usuarios
+              Más
             </a>
             <ul class="dropdown-menu">
-              <li><a class="dropdown-item" href="{{ url_for('list_usuarios') }}">Gestión de Perfiles</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('placeholder', section='reportes_estadisticas') }}">Reportes</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('list_usuarios') }}">Usuarios</a></li>
             </ul>
           </li>
           {% endif %}
+
 
         </ul>
 
@@ -148,10 +146,6 @@
           {% if session.get('user_email') %}
           <li class="nav-item">
             <a class="nav-link" href="{{ url_for('logout') }}">Cerrar sesión</a>
-          </li>
-          {% else %}
-          <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('login') }}">Iniciar sesión</a>
           </li>
           {% endif %}
         </ul>
