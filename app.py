@@ -2662,7 +2662,7 @@ def add_capacitacion():
         # Validar usando el esquema generado
         valid, error = validate_form_from_table(
             cursor,
-            "capacitaciones",
+            "capacitacion",
             request.form
         )
 
@@ -2711,7 +2711,7 @@ def edit_capacitacion(idcapacitacion):
 
         valid, error = validate_form_from_table(
             cursor,
-            "capacitaciones",
+            "capacitacion",
             request.form
         )
 
