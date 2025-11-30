@@ -3134,15 +3134,15 @@ def edit_asistencia(idasistencia):
 
     cursor = conn.cursor(dictionary=True)
 
-
     if request.method == "POST":
-        form_data = dict(request.form)
+        form_data = request.form
 
-        # Validación dinámica
-        success, validated = validate_form_from_table(cursor, "asistencia", form_data)
+        # Leer datos del formulario
+        estatus = form_data.get("estatus")
+        observaciones = form_data.get("observaciones") or None
 
-        if not success:
-            flash(f"Error de validación: {validated}", "danger")
+        if not estatus:
+            flash("El estatus es obligatorio.", "danger")
             cursor.close()
             conn.close()
             return redirect(url_for("edit_asistencia", idasistencia=idasistencia))
@@ -3151,8 +3151,8 @@ def edit_asistencia(idasistencia):
             asistencia_crud.update_asistencia(
                 cursor,
                 idasistencia,
-                validated["estatus"],
-                validated.get("observaciones")
+                estatus,
+                observaciones
             )
             conn.commit()
             flash("Asistencia actualizada correctamente.", "success")
@@ -3165,24 +3165,23 @@ def edit_asistencia(idasistencia):
 
         return redirect(url_for("list_asistencias"))
 
+    # GET: obtener asistencia y listas
     asistencia = asistencia_crud.get_asistencia(cursor, idasistencia)
-    if not asistencia:
-        flash("Asistencia no encontrada.", "warning")
-        cursor.close()
-        conn.close()
-        return redirect(url_for("list_asistencias"))
-
     clases = asistencia_crud.get_clases(cursor)
     estudiantes = asistencia_crud.get_estudiantes(cursor)
     docentes = asistencia_crud.get_docentes(cursor)
+
     cursor.close()
     conn.close()
 
-    return render_template("asistencia/asistencia_form.html",
-                           asistencia=asistencia,
-                           clases=clases,
-                           estudiantes=estudiantes,
-                           docentes=docentes)
+    return render_template(
+        "asistencia/asistencia_form.html",
+        asistencia=asistencia,
+        clases=clases,
+        estudiantes=estudiantes,
+        docentes=docentes
+    )
+
 
 
 @app.route("/asistencia/asistencias/delete/<int:idasistencia>", methods=["POST"])
