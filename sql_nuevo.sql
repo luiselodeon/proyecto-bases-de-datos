@@ -101,6 +101,7 @@ CREATE TABLE IF NOT EXISTS asignatura (
   horas_por_sesion    DECIMAL(4,2) NULL,
   clave_asignatura    VARCHAR(20) NOT NULL,
   iddeptoasignatura   INT NOT NULL,
+  CONSTRAINT uq_asignatura_nombre UNIQUE (nombre_asignatura),
   CONSTRAINT uq_asignatura_clave UNIQUE (clave_asignatura),
   CONSTRAINT fk_asignatura_depto
     FOREIGN KEY (iddeptoasignatura) REFERENCES departamentoasignatura(iddeptoasignatura)
