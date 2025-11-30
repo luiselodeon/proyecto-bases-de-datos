@@ -11,7 +11,7 @@
 <form action="{{ url_for('search_inscripciones') }}" method="get" class="mb-4">
     <div class="input-group">
         <input type="text" name="query" class="form-control"
-            placeholder="Buscar inscripción por estudiante o periodo...">
+            placeholder="Buscar inscripción por estudiante, asignatura o periodo...">
         <button type="submit" class="btn btn-outline-secondary">Buscar</button>
     </div>
 </form>
@@ -24,9 +24,12 @@
             <thead>
                 <tr>
                     <th>Estudiante</th>
+                    <th>Asignatura</th>
                     <th>Periodo</th>
+                    <th>Horario</th>
+                    <th>Aula</th>
+                    <th>Docente</th>
                     <th>Fecha</th>
-                    <th>Motivo</th>
                     <th>Estatus</th>
                     <th>Acciones</th>
                 </tr>
@@ -35,9 +38,12 @@
                 {% for i in inscripciones %}
                 <tr>
                     <td>{{ i.nombre_estudiante }}</td>
+                    <td>{{ i.nombre_asignatura }}</td>
                     <td>{{ i.descripcion_periodo }}</td>
+                    <td>{{ i.dia_semana }} {{ i.hora_inicio|format_timedelta }}-{{ i.hora_fin|format_timedelta }}</td>
+                    <td>{{ i.descripcion_aula }}</td>
+                    <td>{{ i.nombre_docente }}</td>
                     <td>{{ i.fecha_inscripcion }}</td>
-                    <td>{{ i.motivo_inscripcion or 'N/A' }}</td>
                     <td><span
                             class="badge bg-{{ 'success' if i.estatus == 'CONCLUIDA' else 'warning' if i.estatus == 'EN_PROCESO' else 'secondary' }}">{{
                             i.estatus }}</span></td>
@@ -52,7 +58,7 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="6" class="text-center">No hay inscripciones.</td>
+                    <td colspan="9" class="text-center">No hay inscripciones.</td>
                 </tr>
                 {% endfor %}
             </tbody>

@@ -368,15 +368,15 @@ ENGINE=InnoDB;
 CREATE TABLE IF NOT EXISTS inscripcion (
   idinscripcion      INT AUTO_INCREMENT PRIMARY KEY,
   matricula_alumno   INT NOT NULL,
-  idperiodoinscripciones INT NOT NULL,
+  idclaseprogramada  INT NOT NULL,
   fecha_inscripcion  DATE NOT NULL,
   motivo_inscripcion VARCHAR(80) NULL,
   estatus            ENUM('INICIADA','EN_PROCESO','CONCLUIDA','CANCELADA') NOT NULL DEFAULT 'INICIADA',
   CONSTRAINT fk_inscripcion_estudiante
     FOREIGN KEY (matricula_alumno) REFERENCES estudiante(matricula_alumno)
     ON DELETE RESTRICT ON UPDATE CASCADE,
-  CONSTRAINT fk_inscripcion_periodo
-    FOREIGN KEY (idperiodoinscripciones) REFERENCES periodoinscripciones(idperiodoinscripciones)
+  CONSTRAINT fk_inscripcion_claseprogramada
+    FOREIGN KEY (idclaseprogramada) REFERENCES claseprogramada(idclaseprogramada)
     ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB;
 

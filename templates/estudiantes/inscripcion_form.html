@@ -18,22 +18,19 @@
         endif %}
     </div>
     <div class="mb-3">
-        <label for="idperiodo" class="form-label">Periodo</label>
-        <select class="form-select" id="idperiodo" name="idperiodo" required {{ 'disabled' if inscripcion else '' }}>
-            <option value="">Seleccione periodo</option>
-            {% for p in periodos %}
-            <option value="{{ p.idperiodoinscripciones }}" {% if inscripcion and
-                inscripcion.idperiodoinscripciones==p.idperiodoinscripciones %}selected{% endif %}>{{
-                p.descripcion_periodo }}</option>
+        <label for="idclaseprogramada" class="form-label">Clase Programada</label>
+        <select class="form-select" id="idclaseprogramada" name="idclaseprogramada" required>
+            <option value="">Seleccione clase programada</option>
+            {% for cp in clases_programadas %}
+            <option value="{{ cp.idclaseprogramada }}" {% if inscripcion and
+                inscripcion.idclaseprogramada==cp.idclaseprogramada %}selected{% endif %} {% if cp.inscritos>=
+                cp.capacidad %}disabled{% endif %}>
+                {{ cp.nombre_asignatura }} - {{ cp.descripcion_periodo }} - {{ cp.horario }} - {{ cp.nombre_docente }}
+                ({{ cp.descripcion_aula }}: {{ cp.inscritos }}/{{ cp.capacidad }})
+                {% if cp.inscritos >= cp.capacidad %} [LLENO]{% endif %}
+            </option>
             {% endfor %}
         </select>
-        {% if inscripcion %}<input type="hidden" name="idperiodo" value="{{ inscripcion.idperiodoinscripciones }}">{%
-        endif %}
-    </div>
-    <div class="mb-3">
-        <label for="fecha_inscripcion" class="form-label">Fecha Inscripción</label>
-        <input type="date" class="form-control" id="fecha_inscripcion" name="fecha_inscripcion"
-            value="{{ inscripcion.fecha_inscripcion if inscripcion else '' }}" required>
     </div>
     <div class="mb-3">
         <label for="motivo_inscripcion" class="form-label">Motivo (opcional)</label>
