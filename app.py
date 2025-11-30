@@ -3068,15 +3068,21 @@ def add_asistencia():
 
     cursor = conn.cursor(dictionary=True)
 
-
     if request.method == "POST":
-        form_data = dict(request.form)
+        form_data = request.form
 
-        # Validación
-        success, validated = validate_form_from_table(cursor, "asistencias", form_data)
+        # Leer datos del formulario
+        idclase = form_data.get("idclase")
+        fecha = form_data.get("fecha")
+        tipo = form_data.get("tipo")
+        matricula = form_data.get("matricula") or None
+        iddocente = form_data.get("iddocente") or None
+        estatus = form_data.get("estatus")
+        observaciones = form_data.get("observaciones") or None
 
-        if not success:
-            flash(f"Error de validación: {validated}", "danger")
+        # Validación mínima
+        if not idclase or not fecha or not tipo or not estatus:
+            flash("Faltan campos obligatorios (clase, fecha, tipo, estatus).", "danger")
             cursor.close()
             conn.close()
             return redirect(url_for("add_asistencia"))
@@ -3084,13 +3090,13 @@ def add_asistencia():
         try:
             asistencia_crud.add_asistencia(
                 cursor,
-                validated["idclase"],
-                validated["fecha"],
-                validated["tipo"],
-                validated.get("matricula"),
-                validated.get("iddocente"),
-                validated["estatus"],
-                validated.get("observaciones")
+                idclase,
+                fecha,
+                tipo,
+                matricula,
+                iddocente,
+                estatus,
+                observaciones
             )
             conn.commit()
             flash("Asistencia añadida correctamente.", "success")
@@ -3103,17 +3109,21 @@ def add_asistencia():
 
         return redirect(url_for("list_asistencias"))
 
+    # Si es GET → cargar combos
     clases = asistencia_crud.get_clases(cursor)
     estudiantes = asistencia_crud.get_estudiantes(cursor)
     docentes = asistencia_crud.get_docentes(cursor)
     cursor.close()
     conn.close()
 
-    return render_template("asistencia/asistencia_form.html",
-                           asistencia=None,
-                           clases=clases,
-                           estudiantes=estudiantes,
-                           docentes=docentes)
+    return render_template(
+        "asistencia/asistencia_form.html",
+        asistencia=None,
+        clases=clases,
+        estudiantes=estudiantes,
+        docentes=docentes
+    )
+
 
 
 @app.route("/asistencia/asistencias/edit/<int:idasistencia>", methods=["GET", "POST"])
@@ -3129,7 +3139,7 @@ def edit_asistencia(idasistencia):
         form_data = dict(request.form)
 
         # Validación dinámica
-        success, validated = validate_form_from_table(cursor, "asistencias", form_data)
+        success, validated = validate_form_from_table(cursor, "asistencia", form_data)
 
         if not success:
             flash(f"Error de validación: {validated}", "danger")

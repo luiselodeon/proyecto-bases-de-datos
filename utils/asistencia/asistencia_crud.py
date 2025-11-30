@@ -1,33 +1,23 @@
 import mysql.connector
 
 def list_asistencias(cursor):
-    """List all asistencias with details"""
     query = """
     SELECT 
         asi.idasistencia,
-        asi.idclaseprogramada,
-        asi.fecha,
-        asi.tipo,
-        asi.matricula_alumno,
-        asi.iddocente,
-        asi.estatus,
-        asi.observaciones,
-        a.nombre_asignatura,
-        CASE 
-            WHEN asi.tipo = 'ESTUDIANTE' THEN CONCAT(p.nombre, ' ', p.apellido_paterno)
-            WHEN asi.tipo = 'DOCENTE' THEN CONCAT(pd.nombre, ' ', pd.apellido_paterno)
-        END AS persona_nombre
+        CONCAT(p.nombre, ' ', p.apellido_paterno, ' ', IFNULL(p.apellido_materno, '')) AS nombre_estudiante,
+        a.nombre_asignatura AS nombre_clase,
+        asi.fecha AS fecha_asistencia,
+        asi.estatus AS estado_asistencia
     FROM asistencia asi
     JOIN claseprogramada cp ON asi.idclaseprogramada = cp.idclaseprogramada
     JOIN asignatura a ON cp.idasignatura = a.idasignatura
     LEFT JOIN estudiante e ON asi.matricula_alumno = e.matricula_alumno
     LEFT JOIN persona p ON e.idpersona = p.idpersona
-    LEFT JOIN docente d ON asi.iddocente = d.iddocente
-    LEFT JOIN persona pd ON d.idpersona = pd.idpersona
     ORDER BY asi.fecha DESC
     """
     cursor.execute(query)
     return cursor.fetchall()
+
 
 def get_asistencia(cursor, idasistencia):
     """Get a specific asistencia"""
