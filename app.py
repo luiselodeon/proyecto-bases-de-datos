@@ -342,8 +342,6 @@ def edit_carrera(idcarrera):
     cursor = conn.cursor(dictionary=True)
 
     if request.method == "POST":
-
-        # 1. Recogemos los datos del formulario
         form_data = {
             "descripcion_carrera": request.form["descripcion_carrera"],
             "creditos_carrera": request.form["creditos_carrera"],
@@ -351,7 +349,6 @@ def edit_carrera(idcarrera):
             "costo_inscripcion": request.form["costo_inscripcion"],
         }
 
-        # 2. Validación automática
         valid, error = validate_form_from_table(
             cursor,
             "carrera",
@@ -364,7 +361,6 @@ def edit_carrera(idcarrera):
             conn.close()
             return redirect(request.referrer)
 
-        # 3. Datos ya validados → ejecutar CRUD
         try:
             carreras_crud.update_carrera(
                 cursor,
@@ -387,6 +383,19 @@ def edit_carrera(idcarrera):
             conn.close()
 
         return redirect(url_for("list_carreras"))
+
+    # ===== GET: cargar datos =====
+    cursor.execute("SELECT * FROM carrera WHERE idcarrera = %s", (idcarrera,))
+    carrera = cursor.fetchone()
+
+    cursor.close()
+    conn.close()
+
+    if carrera is None:
+        flash("La carrera no existe.", "danger")
+        return redirect(url_for("list_carreras"))
+
+    return render_template("cursos/carrera_form.html", carrera=carrera)
 
 
 @app.route("/cursos_planes/carreras/delete/<int:idcarrera>", methods=["POST"])
@@ -862,7 +871,7 @@ def edit_planestudio(idplanestudio):
         # 2. Validación desde BD
         valid, error = validate_form_from_table(
             cursor,
-            "periodoinscripciones",
+            "planestudio",
             request.form
         )
 
@@ -2653,7 +2662,7 @@ def add_capacitacion():
         # Validar usando el esquema generado
         valid, error = validate_form_from_table(
             cursor,
-            "capacitaciones",
+            "capacitacion",
             request.form
         )
 
@@ -2702,7 +2711,7 @@ def edit_capacitacion(idcapacitacion):
 
         valid, error = validate_form_from_table(
             cursor,
-            "capacitaciones",
+            "capacitacion",
             request.form
         )
 
