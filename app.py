@@ -871,7 +871,7 @@ def edit_planestudio(idplanestudio):
         # 2. Validación desde BD
         valid, error = validate_form_from_table(
             cursor,
-            "periodoinscripciones",
+            "planestudio",
             request.form
         )
 
