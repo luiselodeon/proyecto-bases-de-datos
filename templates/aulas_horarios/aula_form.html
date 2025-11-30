@@ -4,8 +4,8 @@
 <h2>{{ 'Editar' if aula else 'Añadir' }} Aula</h2>
 <form method="POST">
     <div class="mb-3">
-        <label for="descripcion" class="form-label">Descripción</label>
-        <input type="text" class="form-control" id="descripcion" name="descripcion"
+        <label for="descripcion_aula" class="form-label">Descripción</label>
+        <input type="text" class="form-control" id="descripcion_aula" name="descripcion_aula"
             value="{{ aula.descripcion_aula if aula else '' }}" required>
     </div>
     <div class="mb-3">

@@ -205,7 +205,7 @@ CREATE TABLE IF NOT EXISTS beca (
   idbeca          INT AUTO_INCREMENT PRIMARY KEY,
   descripcion_beca VARCHAR(80) NOT NULL,
   porcentaje_beca TINYINT NOT NULL,
-  estatus_beca    ENUM('A','I') NOT NULL DEFAULT 'A',
+  estatus_beca    ENUM('A','B','C') NOT NULL DEFAULT 'A',
   idtipo_beca     INT NOT NULL,
   CONSTRAINT fk_beca_tipobeca
     FOREIGN KEY (idtipo_beca) REFERENCES tipo_beca(idtipo_beca)

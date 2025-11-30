@@ -5,6 +5,12 @@ from dotenv import load_dotenv
 import mysql.connector
 from werkzeug.security import check_password_hash
 from utils.auth import login_required, role_required
+from utils.schema_generator import generate_schema_from_table
+from utils.form_validation import validate_form_from_table
+from utils.validators import (
+    validate_string, validate_date, validate_enum, validate_float, validate_int
+)
+
 
 
 
@@ -58,9 +64,8 @@ def index():
     
     return render_template('estudiantes/registro_consulta.html', students=students)
 
-@app.route('/add', methods=['GET', 'POST'])
+@app.route('/gestion_estudiantes/registro_consulta/add', methods=['GET', 'POST'])
 def add_student():
-    """Añade un nuevo estudiante."""
     conn = get_db_connection()
     if conn is None:
         return redirect(url_for('index'))
@@ -68,36 +73,63 @@ def add_student():
     cursor = conn.cursor(dictionary=True)
 
     if request.method == 'POST':
-        matricula = request.form['matricula']
-        nombre = request.form['nombre']
-        apellido_paterno = request.form['apellido_paterno']
-        apellido_materno = request.form['apellido_materno']
-        correo = request.form['correo']
-        idcarrera = request.form['idcarrera']
 
+        # 1. Recoger datos del formulario
+        form_data = {
+            "matricula": request.form["matricula"],
+            "nombre": request.form["nombre"],
+            "apellido_paterno": request.form["apellido_paterno"],
+            "apellido_materno": request.form["apellido_materno"],
+            "correo": request.form["correo"],
+            "idcarrera": request.form["idcarrera"],
+        }
+
+        # 2. Validación automática
+        valid, error = validate_form_from_table(
+            cursor,
+            "estudiante",
+            request.form
+        )
+
+        if not valid:
+            flash(error, "danger")
+            cursor.close()
+            conn.close()
+            return redirect(request.referrer)
+
+        # 3. Datos validados → CRUD
         try:
-            conn.start_transaction()
-            students_crud.add_student(cursor, matricula, nombre, apellido_paterno, apellido_materno, correo, idcarrera)
+            # conn.start_transaction()
+            students_crud.add_student(
+                cursor,
+                form_data["matricula"],
+                form_data["nombre"],
+                form_data["apellido_paterno"],
+                form_data["apellido_materno"],
+                form_data["correo"],
+                form_data["idcarrera"]
+            )
             conn.commit()
-            flash('Estudiante añadido correctamente.', 'success')
+            flash("Estudiante añadido correctamente.", "success")
+
         except mysql.connector.Error as err:
             conn.rollback()
-            flash(f'Error al añadir estudiante: {err}', 'danger')
+            flash(f"Error al añadir estudiante: {err}", "danger")
+
         finally:
             cursor.close()
             conn.close()
 
         return redirect(url_for('index'))
 
-    # GET - Obtener carreras para el dropdown
+    # GET - Obtener carreras para dropdown
     carreras = students_crud.get_carreras(cursor)
     cursor.close()
     conn.close()
     return render_template('estudiantes/student_form.html', student=None, carreras=carreras)
 
-@app.route('/edit/<int:matricula>', methods=['GET', 'POST'])
+@app.route('/gestion_estudiantes/registro_consulta/edit/<int:matricula>', methods=['GET', 'POST'])
 def edit_student(matricula):
-    """Edita la información de un estudiante."""
     conn = get_db_connection()
     if conn is None:
         return redirect(url_for('index'))
@@ -105,40 +137,74 @@ def edit_student(matricula):
     cursor = conn.cursor(dictionary=True)
 
     if request.method == 'POST':
-        nombre = request.form['nombre']
-        apellido_paterno = request.form['apellido_paterno']
-        apellido_materno = request.form['apellido_materno']
-        correo = request.form['correo']
-        
+
+        # 1. Recoger datos del formulario
+        form_data = {
+            "nombre": request.form["nombre"],
+            "apellido_paterno": request.form["apellido_paterno"],
+            "apellido_materno": request.form["apellido_materno"],
+            "correo": request.form["correo"],
+            # idcarrera no viene en edit → no se valida
+        }
+
+        # 2. Validación automática
+        valid, error = validate_form_from_table(
+            cursor,
+            "estudiante",
+            request.form
+        )
+
+        if not valid:
+            flash(error, "danger")
+            cursor.close()
+            conn.close()
+            return redirect(request.referrer)
+
+        # 3. Datos validados → CRUD
         try:
-            if students_crud.update_student(cursor, matricula, nombre, apellido_paterno, apellido_materno, correo):
+            if students_crud.update_student(
+                cursor,
+                matricula,
+                form_data["nombre"],
+                form_data["apellido_paterno"],
+                form_data["apellido_materno"],
+                form_data["correo"]
+            ):
                 conn.commit()
-                flash('Estudiante actualizado correctamente.', 'success')
+                flash("Estudiante actualizado correctamente.", "success")
             else:
-                flash('No se encontró el estudiante para actualizar.', 'warning')
+                flash("No se encontró el estudiante para actualizar.", "warning")
+
         except mysql.connector.Error as err:
             conn.rollback()
-            flash(f'Error al actualizar: {err}', 'danger')
+            flash(f"Error al actualizar: {err}", "danger")
+
         finally:
             cursor.close()
             conn.close()
-        
+
         return redirect(url_for('index'))
 
     # GET
     student = students_crud.get_student(cursor, matricula)
+    carreras = students_crud.get_carreras(cursor)  # para dropdown
     cursor.close()
     conn.close()
 
     if student:
-        student_dict = dict(zip(cursor.column_names, student)) if not isinstance(student, dict) else student
-        return render_template('estudiantes/student_form.html', student=student_dict, matricula=matricula)
+        return render_template(
+            'estudiantes/student_form.html',
+            student=student,
+            matricula=matricula,
+            carreras=carreras
+        )
     else:
-        flash('Estudiante no encontrado.', 'warning')
+        flash("Estudiante no encontrado.", "warning")
         return redirect(url_for('index'))
 
 
-@app.route('/delete/<int:matricula>', methods=['POST'])
+
+@app.route('/gestion_estudiantes/registro_consulta/delete/<int:matricula>', methods=['POST'])
 def delete_student(matricula):
     """Elimina un estudiante."""
     conn = get_db_connection()
@@ -163,7 +229,7 @@ def delete_student(matricula):
 
     return redirect(url_for('index'))
 
-@app.route('/search')
+@app.route('/gestion_estudiantes/registro_consulta/search')
 def search_student():
     """Busca estudiantes."""
     query_term = request.args.get('query', '')
@@ -208,32 +274,64 @@ def add_carrera():
     conn = get_db_connection()
     if conn is None:
         return redirect(url_for("list_carreras"))
-    
-    cursor = conn.cursor(dictionary=True)
-    
-    if request.method == "POST":
-        descripcion = request.form["descripcion_carrera"]
-        creditos = request.form["creditos_carrera"]
-        iddepto = request.form["iddepartamentoacademico"]
-        costo = request.form["costo_inscripcion"]
 
+    cursor = conn.cursor(dictionary=True)
+
+    if request.method == "POST":
+
+        # 1. Recogemos los datos del formulario
+        form_data = {
+            "descripcion_carrera": request.form["descripcion_carrera"],
+            "creditos_carrera": request.form["creditos_carrera"],
+            "iddepartamentoacademico": request.form["iddepartamentoacademico"],
+            "costo_inscripcion": request.form["costo_inscripcion"],
+        }
+
+        # 2. Validar automáticamente usando el esquema de la tabla
+        valid, error = validate_form_from_table(
+            cursor,
+            "carrera",
+            request.form
+        )
+
+        if not valid:
+            flash(error, "danger")
+            cursor.close()
+            conn.close()
+            return redirect(request.referrer)
+
+        # 3. Datos validados → ejecutar CRUD
         try:
-            carreras_crud.add_carrera(cursor, descripcion, creditos, iddepto, costo)
+            carreras_crud.add_carrera(
+                cursor,
+                form_data["descripcion_carrera"],
+                form_data["creditos_carrera"],
+                form_data["iddepartamentoacademico"],
+                form_data["costo_inscripcion"],
+            )
+
             conn.commit()
             flash("Carrera añadida correctamente.", "success")
             return redirect(url_for("list_carreras"))
+
         except mysql.connector.Error as err:
             conn.rollback()
             flash(f"Error al añadir carrera: {err}", "danger")
+
         finally:
             cursor.close()
             conn.close()
-    
+
     # GET
     departamentos = carreras_crud.get_departamentos(cursor)
     cursor.close()
     conn.close()
-    return render_template("cursos/carrera_form.html", carrera=None, departamentos=departamentos)
+
+    return render_template(
+        "cursos/carrera_form.html",
+        carrera=None,
+        departamentos=departamentos
+    )
 
 @app.route("/cursos_planes/carreras/edit/<int:idcarrera>", methods=["GET", "POST"])
 def edit_carrera(idcarrera):
@@ -244,35 +342,52 @@ def edit_carrera(idcarrera):
     cursor = conn.cursor(dictionary=True)
 
     if request.method == "POST":
-        descripcion = request.form["descripcion_carrera"]
-        creditos = request.form["creditos_carrera"]
-        iddepto = request.form["iddepartamentoacademico"]
-        costo = request.form["costo_inscripcion"]
 
+        # 1. Recogemos los datos del formulario
+        form_data = {
+            "descripcion_carrera": request.form["descripcion_carrera"],
+            "creditos_carrera": request.form["creditos_carrera"],
+            "iddepartamentoacademico": request.form["iddepartamentoacademico"],
+            "costo_inscripcion": request.form["costo_inscripcion"],
+        }
+
+        # 2. Validación automática
+        valid, error = validate_form_from_table(
+            cursor,
+            "carrera",
+            request.form
+        )
+
+        if not valid:
+            flash(error, "danger")
+            cursor.close()
+            conn.close()
+            return redirect(request.referrer)
+
+        # 3. Datos ya validados → ejecutar CRUD
         try:
-            carreras_crud.update_carrera(cursor, idcarrera, descripcion, creditos, iddepto, costo)
+            carreras_crud.update_carrera(
+                cursor,
+                idcarrera,
+                form_data["descripcion_carrera"],
+                form_data["creditos_carrera"],
+                form_data["iddepartamentoacademico"],
+                form_data["costo_inscripcion"],
+            )
+
             conn.commit()
             flash("Carrera actualizada correctamente.", "success")
+
         except mysql.connector.Error as err:
             conn.rollback()
             flash(f"Error al actualizar carrera: {err}", "danger")
+
         finally:
             cursor.close()
             conn.close()
+
         return redirect(url_for("list_carreras"))
 
-    # GET
-    carrera = carreras_crud.get_carrera(cursor, idcarrera)
-    if not carrera:
-        flash("Carrera no encontrada.", "warning")
-        cursor.close()
-        conn.close()
-        return redirect(url_for("list_carreras"))
-    
-    departamentos = carreras_crud.get_departamentos(cursor)
-    cursor.close()
-    conn.close()
-    return render_template("cursos/carrera_form.html", carrera=carrera, departamentos=departamentos)
 
 @app.route("/cursos_planes/carreras/delete/<int:idcarrera>", methods=["POST"])
 def delete_carrera(idcarrera):
@@ -338,52 +453,103 @@ def list_departamentos():
 
 @app.route("/aulas_horarios/departamentos/add", methods=["GET", "POST"])
 def add_departamento():
+
     if request.method == "POST":
-        nombre = request.form["nombre_departamento"]
+        form_data = {
+            "nombre_departamento": request.form["nombre_departamento"]
+        }
 
         conn = get_db_connection()
-        cursor = conn.cursor()
+        cursor = conn.cursor(dictionary=True)
+
+        # 1. Obtener esquema automático desde la BD
+        valid, error = validate_form_from_table(
+            cursor,
+            "departamentoacademico",
+            request.form
+        )
+
+        if not valid:
+            flash(error, "danger")
+            cursor.close()
+            conn.close()
+            return redirect(request.referrer)
+
+        # 3. Ejecutar CRUD si validó correctamente
         try:
-            departamentos_crud.add_departamento(cursor, nombre)
+            departamentos_crud.add_departamento(
+                cursor,
+                form_data["nombre_departamento"]
+            )
             conn.commit()
             flash("Departamento añadido correctamente.", "success")
+
         except mysql.connector.Error as err:
             conn.rollback()
             flash(f"Error al añadir departamento: {err}", "danger")
+
         finally:
             cursor.close()
             conn.close()
+
         return redirect(url_for("list_departamentos"))
 
     return render_template("aulas_horarios/departamento_form.html", departamento=None)
 
+
 @app.route("/aulas_horarios/departamentos/edit/<int:iddep>", methods=["GET", "POST"])
 def edit_departamento(iddep):
+
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
     if request.method == "POST":
-        nombre = request.form["nombre_departamento"]
+
+        form_data = {
+            "nombre_departamento": request.form["nombre_departamento"]
+        }
+
+        # 1. Obtener esquema automático desde la BD
+        valid, error = validate_form_from_table(
+            cursor,
+            "departamentoacademico",
+            request.form
+        )
+
+        if not valid:
+            flash(error, "danger")
+            cursor.close()
+            conn.close()
+            return redirect(request.referrer)
+
+        # 3. Datos validados → ejecutar CRUD
         try:
-            departamentos_crud.update_departamento(cursor, iddep, nombre)
+            departamentos_crud.update_departamento(
+                cursor, 
+                iddep, 
+                form_data["nombre_departamento"]
+            )
             conn.commit()
             flash("Departamento actualizado correctamente.", "success")
+
         except mysql.connector.Error as err:
             conn.rollback()
             flash(f"Error al actualizar departamento: {err}", "danger")
+
         finally:
             cursor.close()
             conn.close()
+
         return redirect(url_for("list_departamentos"))
 
-    # GET
+    # GET request → Cargar datos del departamento
     departamento = departamentos_crud.get_departamento(cursor, iddep)
+
     cursor.close()
     conn.close()
-    if not departamento:
-        flash("Departamento no encontrado.", "warning")
-        return redirect(url_for("list_departamentos"))
+
     return render_template("aulas_horarios/departamento_form.html", departamento=departamento)
+
 
 @app.route("/aulas_horarios/departamentos/delete/<int:iddep>", methods=["POST"])
 def delete_departamento(iddep):
@@ -438,32 +604,60 @@ def add_asignatura():
     conn = get_db_connection()
     if conn is None:
         return redirect(url_for("list_asignaturas"))
-    
+
     cursor = conn.cursor(dictionary=True)
 
     if request.method == "POST":
-        nombre = request.form["nombre_asignatura"]
-        creditos = request.form["creditos_asignatura"]
-        horas = request.form.get("horas_por_sesion") or None
-        iddepto = request.form.get("iddeptoasignatura") or None
 
+        form_data = {
+            "nombre_asignatura": request.form["nombre_asignatura"],
+            "creditos_asignatura": request.form["creditos_asignatura"],
+            "horas_por_sesion": request.form.get("horas_por_sesion") or None,
+            "iddeptoasignatura": request.form.get("iddeptoasignatura") or None
+        }
+
+        # 1. Obtener el esquema generado automáticamente para la tabla
+        valid, error = validate_form_from_table(
+            cursor,
+            "asignatura",
+            request.form
+        )
+
+        if not valid:
+            flash(error, "danger")
+            cursor.close()
+            conn.close()
+            return redirect(request.referrer)
+
+        # 3. CRUD si la validación fue correcta
         try:
-            asignaturas_crud.add_asignatura(cursor, nombre, creditos, horas, iddepto)
+            asignaturas_crud.add_asignatura(
+                cursor,
+                form_data["nombre_asignatura"],
+                form_data["creditos_asignatura"],
+                form_data["horas_por_sesion"],
+                form_data["iddeptoasignatura"]
+            )
             conn.commit()
             flash("Asignatura añadida correctamente.", "success")
+
         except mysql.connector.Error as err:
             conn.rollback()
             flash(f"Error al añadir asignatura: {err}", "danger")
+
         finally:
             cursor.close()
             conn.close()
+
         return redirect(url_for("list_asignaturas"))
 
     # GET
     departamentos = asignaturas_crud.get_departamentos_asignatura(cursor)
     cursor.close()
     conn.close()
+
     return render_template("cursos/asignatura_form.html", asignatura=None, departamentos=departamentos)
+
 
 
 @app.route("/cursos_planes/asignaturas/edit/<int:idasignatura>", methods=["GET", "POST"])
@@ -475,21 +669,48 @@ def edit_asignatura(idasignatura):
     cursor = conn.cursor(dictionary=True)
 
     if request.method == "POST":
-        nombre = request.form["nombre_asignatura"]
-        creditos = request.form["creditos_asignatura"]
-        horas = request.form.get("horas_por_sesion") or None
-        iddepto = request.form.get("iddeptoasignatura") or None
 
+        form_data = {
+            "nombre_asignatura": request.form["nombre_asignatura"],
+            "creditos_asignatura": request.form["creditos_asignatura"],
+            "horas_por_sesion": request.form.get("horas_por_sesion") or None,
+            "iddeptoasignatura": request.form.get("iddeptoasignatura") or None
+        }
+
+        # 1. Esquema generado automáticamente
+        valid, error = validate_form_from_table(
+            cursor,
+            "asignatura",
+            request.form
+        )
+
+        if not valid:
+            flash(error, "danger")
+            cursor.close()
+            conn.close()
+            return redirect(request.referrer)
+
+        # 3. CRUD si validó
         try:
-            asignaturas_crud.update_asignatura(cursor, idasignatura, nombre, creditos, horas, iddepto)
+            asignaturas_crud.update_asignatura(
+                cursor,
+                idasignatura,
+                form_data["nombre_asignatura"],
+                form_data["creditos_asignatura"],
+                form_data["horas_por_sesion"],
+                form_data["iddeptoasignatura"]
+            )
             conn.commit()
             flash("Asignatura actualizada correctamente.", "success")
+
         except mysql.connector.Error as err:
             conn.rollback()
             flash(f"Error al actualizar asignatura: {err}", "danger")
+
         finally:
             cursor.close()
             conn.close()
+
         return redirect(url_for("list_asignaturas"))
 
     # GET
@@ -499,11 +720,13 @@ def edit_asignatura(idasignatura):
         cursor.close()
         conn.close()
         return redirect(url_for("list_asignaturas"))
-    
+
     departamentos = asignaturas_crud.get_departamentos_asignatura(cursor)
     cursor.close()
     conn.close()
+
     return render_template("cursos/asignatura_form.html", asignatura=asignatura, departamentos=departamentos)
+
 
 @app.route("/cursos_planes/asignaturas/delete/<int:idasignatura>", methods=["POST"])
 def delete_asignatura(idasignatura):
@@ -564,31 +787,58 @@ def add_planestudio():
     conn = get_db_connection()
     if conn is None:
         return redirect(url_for("list_planestudios"))
-    
+
     cursor = conn.cursor(dictionary=True)
-    
+
     if request.method == "POST":
-        nombre_plan = request.form["nombre_plan"]
-        vigencia_inicio = request.form["vigencia_inicio"]
-        vigencia_fin = request.form.get("vigencia_fin") or None
-        idcarrera = request.form["idcarrera"]
-        
+
+        # 1. Recogemos los datos del formulario
+        form_data = {
+            "nombre_plan": request.form["nombre_plan"],
+            "vigencia_inicio": request.form["vigencia_inicio"],
+            "vigencia_fin": request.form.get("vigencia_fin", None),
+            "idcarrera": request.form["idcarrera"],
+        }
+
+        # 2. Validación automática desde BD
+        valid, error = validate_form_from_table(
+            cursor,
+            "planestudio",
+            request.form
+        )
+
+        if not valid:
+            flash(error, "danger")
+            cursor.close()
+            conn.close()
+            return redirect(request.referrer)
+
+        # 3. Datos validados
         try:
-            planestudio_crud.add_planestudio(cursor, nombre_plan, vigencia_inicio, vigencia_fin, idcarrera)
+            planestudio_crud.add_planestudio(
+                cursor,
+                form_data["nombre_plan"],
+                form_data["vigencia_inicio"],
+                form_data["vigencia_fin"],
+                form_data["idcarrera"]
+            )
             conn.commit()
             flash("Plan de estudio añadido correctamente.", "success")
             return redirect(url_for("list_planestudios"))
+
         except mysql.connector.Error as err:
             conn.rollback()
             flash(f"Error al añadir plan de estudio: {err}", "danger")
+
         finally:
             cursor.close()
             conn.close()
-    
-    # GET - Obtener carreras para el dropdown
+
+    # GET
     carreras = planestudio_crud.get_carreras(cursor)
     cursor.close()
     conn.close()
+
     return render_template("cursos/planestudio_form.html", plan=None, carreras=carreras)
 
 @app.route("/cursos_planes/planestudios/edit/<int:idplanestudio>", methods=["GET", "POST"])
@@ -596,39 +846,71 @@ def edit_planestudio(idplanestudio):
     conn = get_db_connection()
     if conn is None:
         return redirect(url_for("list_planestudios"))
-    
+
     cursor = conn.cursor(dictionary=True)
-    
+
     if request.method == "POST":
-        nombre_plan = request.form["nombre_plan"]
-        vigencia_inicio = request.form["vigencia_inicio"]
-        vigencia_fin = request.form.get("vigencia_fin") or None
-        idcarrera = request.form["idcarrera"]
-        
+
+        # 1. Recogemos los datos
+        form_data = {
+            "nombre_plan": request.form["nombre_plan"],
+            "vigencia_inicio": request.form["vigencia_inicio"],
+            "vigencia_fin": request.form.get("vigencia_fin", None),
+            "idcarrera": request.form["idcarrera"],
+        }
+
+        # 2. Validación desde BD
+        valid, error = validate_form_from_table(
+            cursor,
+            "periodoinscripciones",
+            request.form
+        )
+
+        if not valid:
+            flash(error, "danger")
+            cursor.close()
+            conn.close()
+            return redirect(request.referrer)
+
+        # 3. Datos validados → actualizar
         try:
-            planestudio_crud.update_planestudio(cursor, idplanestudio, nombre_plan, vigencia_inicio, vigencia_fin, idcarrera)
+            planestudio_crud.update_planestudio(
+                cursor,
+                idplanestudio,
+                form_data["nombre_plan"],
+                form_data["vigencia_inicio"],
+                form_data["vigencia_fin"],
+                form_data["idcarrera"]
+            )
+
             conn.commit()
             flash("Plan de estudio actualizado correctamente.", "success")
+
         except mysql.connector.Error as err:
             conn.rollback()
             flash(f"Error al actualizar plan de estudio: {err}", "danger")
+
         finally:
             cursor.close()
             conn.close()
+
         return redirect(url_for("list_planestudios"))
-    
+
     # GET
     plan = planestudio_crud.get_planestudio(cursor, idplanestudio)
+
     if not plan:
         flash("Plan de estudio no encontrado.", "warning")
         cursor.close()
         conn.close()
         return redirect(url_for("list_planestudios"))
-    
+
     carreras = planestudio_crud.get_carreras(cursor)
     cursor.close()
     conn.close()
+
     return render_template("cursos/planestudio_form.html", plan=plan, carreras=carreras)
+
 
 @app.route("/cursos_planes/planestudios/delete/<int:idplanestudio>", methods=["POST"])
 def delete_planestudio(idplanestudio):
@@ -684,18 +966,39 @@ def list_calendarios():
 
 @app.route("/cursos_planes/calendarios/add", methods=["GET", "POST"])
 def add_calendario():
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_calendarios"))
+
+    cursor = conn.cursor(dictionary=True)
+
     if request.method == "POST":
+
+        # ---------------------------
+        # VALIDACIÓN AUTOMÁTICA
+        # ---------------------------
+        valid, error = validate_form_from_table(
+            cursor,
+            "calendarioescolar",
+            request.form
+        )
+
+        if not valid:
+            flash(error, "danger")
+            cursor.close()
+            conn.close()
+            return redirect(request.referrer)
+
+        # Datos validados
         descripcion = request.form["descripcion"]
         fecha_inicio = request.form["fecha_inicio"]
         fecha_fin = request.form["fecha_fin"]
+
         
-        conn = get_db_connection()
-        if conn is None:
-            return redirect(url_for("list_calendarios"))
-        
-        cursor = conn.cursor()
         try:
-            calendarioescolar_crud.add_calendario(cursor, descripcion, fecha_inicio, fecha_fin)
+            calendarioescolar_crud.add_calendario(
+                cursor, descripcion, fecha_inicio, fecha_fin
+            )
             conn.commit()
             flash("Calendario escolar añadido correctamente.", "success")
         except mysql.connector.Error as err:
@@ -704,25 +1007,47 @@ def add_calendario():
         finally:
             cursor.close()
             conn.close()
+
         return redirect(url_for("list_calendarios"))
-    
+
     return render_template("cursos/calendarioescolar_form.html", calendario=None)
+
+
 
 @app.route("/cursos_planes/calendarios/edit/<int:idcalendario>", methods=["GET", "POST"])
 def edit_calendario(idcalendario):
     conn = get_db_connection()
     if conn is None:
         return redirect(url_for("list_calendarios"))
-    
+
     cursor = conn.cursor(dictionary=True)
-    
+
     if request.method == "POST":
+
+        # ---------------------------
+        # VALIDACIÓN AUTOMÁTICA
+        # ---------------------------
+        valid, error = validate_form_from_table(
+            cursor,
+            "calendarioescolar",
+            request.form
+        )
+
+        if not valid:
+            flash(error, "danger")
+            cursor.close()
+            conn.close()
+            return redirect(request.referrer)
+
+        # Datos validados
         descripcion = request.form["descripcion"]
         fecha_inicio = request.form["fecha_inicio"]
         fecha_fin = request.form["fecha_fin"]
-        
+
         try:
-            calendarioescolar_crud.update_calendario(cursor, idcalendario, descripcion, fecha_inicio, fecha_fin)
+            calendarioescolar_crud.update_calendario(
+                cursor, idcalendario, descripcion, fecha_inicio, fecha_fin
+            )
             conn.commit()
             flash("Calendario escolar actualizado correctamente.", "success")
         except mysql.connector.Error as err:
@@ -731,16 +1056,20 @@ def edit_calendario(idcalendario):
         finally:
             cursor.close()
             conn.close()
+
         return redirect(url_for("list_calendarios"))
-    
+
     # GET
     calendario = calendarioescolar_crud.get_calendario(cursor, idcalendario)
     cursor.close()
     conn.close()
+
     if not calendario:
         flash("Calendario no encontrado.", "warning")
         return redirect(url_for("list_calendarios"))
+
     return render_template("cursos/calendarioescolar_form.html", calendario=calendario)
+
 
 @app.route("/cursos_planes/calendarios/delete/<int:idcalendario>", methods=["POST"])
 def delete_calendario(idcalendario):
@@ -793,8 +1122,28 @@ def list_tipobeca():
 
 @app.route("/finanzas_becas/tipobeca/add", methods=["GET", "POST"])
 def add_tipobeca():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
     if request.method == "POST":
+
+        # ---------------------------
+        # VALIDACIÓN AUTOMÁTICA
+        # ---------------------------
+        valid, error = validate_form_from_table(
+            cursor,
+            "tipo_beca",
+            request.form
+        )
+
+        if not valid:
+            flash(error, "danger")
+            cursor.close()
+            conn.close()
+            return redirect(request.referrer)
+
+        # Datos validados
         nombre = request.form["nombre_tipo"]
+
         conn = get_db_connection()
         cursor = conn.cursor()
         try:
@@ -807,8 +1156,12 @@ def add_tipobeca():
         finally:
             cursor.close()
             conn.close()
+
         return redirect(url_for("list_tipobeca"))
+
     return render_template("finanzas_becas/tipobeca_form.html", tipo=None)
+
+
 
 @app.route("/finanzas_becas/tipobeca/edit/<int:idtipo>", methods=["GET", "POST"])
 def edit_tipobeca(idtipo):
@@ -816,7 +1169,25 @@ def edit_tipobeca(idtipo):
     cursor = conn.cursor(dictionary=True)
 
     if request.method == "POST":
+
+        # ---------------------------
+        # VALIDACIÓN AUTOMÁTICA
+        # ---------------------------
+        valid, error = validate_form_from_table(
+            cursor,
+            "tipo_beca",
+            request.form
+        )
+
+        if not valid:
+            flash(error, "danger")
+            cursor.close()
+            conn.close()
+            return redirect(request.referrer)
+
+        # Datos validados
         nombre = request.form["nombre_tipo"]
+
         try:
             tipobeca_crud.update_tipobeca(cursor, idtipo, nombre)
             conn.commit()
@@ -827,16 +1198,20 @@ def edit_tipobeca(idtipo):
         finally:
             cursor.close()
             conn.close()
+
         return redirect(url_for("list_tipobeca"))
 
     # GET
     tipo = tipobeca_crud.get_tipobeca(cursor, idtipo)
     cursor.close()
     conn.close()
+
     if not tipo:
         flash("Tipo de beca no encontrado.", "warning")
         return redirect(url_for("list_tipobeca"))
+
     return render_template("finanzas_becas/tipobeca_form.html", tipo=tipo)
+
 
 @app.route("/finanzas_becas/tipobeca/delete/<int:idtipo>", methods=["POST"])
 def delete_tipobeca(idtipo):
@@ -888,6 +1263,20 @@ def add_beca():
     cursor = conn.cursor(dictionary=True)
 
     if request.method == "POST":
+
+        # VALIDACIÓN UNIVERSAL
+        valid, error = validate_form_from_table(
+            cursor,
+            "beca",
+            request.form
+        )
+
+        if not valid:
+            flash(error, "danger")
+            cursor.close()
+            conn.close()
+            return redirect(request.referrer)
+
         descripcion = request.form["descripcion_beca"]
         porcentaje = request.form.get("porcentaje_beca") or None
         estatus = request.form.get("estatus_beca") or None
@@ -903,6 +1292,7 @@ def add_beca():
         finally:
             cursor.close()
             conn.close()
+
         return redirect(url_for("list_becas"))
 
     # GET
@@ -912,6 +1302,7 @@ def add_beca():
     return render_template("finanzas_becas/beca_form.html", beca=None, tipos_beca=tipos_beca)
 
 
+
 @app.route("/finanzas_becas/becas/edit/<int:idbeca>", methods=["GET", "POST"])
 def edit_beca(idbeca):
     conn = get_db_connection()
@@ -919,6 +1310,15 @@ def edit_beca(idbeca):
     cursor = conn.cursor(dictionary=True)
 
     if request.method == "POST":
+
+        # VALIDACIÓN UNIVERSAL
+        valid, error = validate_form_from_table(cursor, "beca", request.form)
+        if not valid:
+            flash(error, "danger")
+            cursor.close()
+            conn.close()
+            return redirect(request.referrer)
+
         descripcion = request.form["descripcion_beca"]
         porcentaje = request.form.get("porcentaje_beca") or None
         estatus = request.form.get("estatus_beca") or None
@@ -934,6 +1334,7 @@ def edit_beca(idbeca):
         finally:
             cursor.close()
             conn.close()
+
         return redirect(url_for("list_becas"))
 
     # GET
@@ -948,6 +1349,7 @@ def edit_beca(idbeca):
     cursor.close()
     conn.close()
     return render_template("finanzas_becas/beca_form.html", beca=beca, tipos_beca=tipos_beca)
+
 
 @app.route("/finanzas_becas/becas/delete/<int:idbeca>", methods=["POST"])
 def delete_beca(idbeca):
@@ -996,10 +1398,32 @@ def list_departamentos_asignatura():
 
 @app.route("/aulas_horarios/departamentos_asignatura/add", methods=["GET", "POST"])
 def add_departamento_asignatura():
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_departamentos_asignatura"))
+    
+    cursor = conn.cursor(dictionary=True)
     if request.method == "POST":
+
+        # ---------------------------
+        # VALIDACIÓN AUTOMÁTICA
+        # ---------------------------
+        valid, error = validate_form_from_table(
+            cursor,
+            "departamentoasignatura",
+            request.form
+        )
+
+        if not valid:
+            flash(error, "danger")
+            cursor.close()
+            conn.close()
+            return redirect(request.referrer)
+
+        # Datos validados
         nombre = request.form["nombre_deptoasignatura"]
-        conn = get_db_connection()
-        cursor = conn.cursor()
+
+        
         try:
             departamentoasignatura_crud.add_departamento_asignatura(cursor, nombre)
             conn.commit()
@@ -1010,10 +1434,12 @@ def add_departamento_asignatura():
         finally:
             cursor.close()
             conn.close()
+
         return redirect(url_for("list_departamentos_asignatura"))
 
-    # GET - render form for adding new departamento
     return render_template("aulas_horarios/departamentoasignatura_form.html", departamento=None)
+
+
 
 @app.route("/aulas_horarios/departamentos_asignatura/edit/<int:iddep>", methods=["GET", "POST"])
 def edit_departamento_asignatura(iddep):
@@ -1022,9 +1448,27 @@ def edit_departamento_asignatura(iddep):
         return redirect(url_for("list_departamentos_asignatura"))
     
     cursor = conn.cursor(dictionary=True)
-    
+
     if request.method == "POST":
+
+        # ---------------------------
+        # VALIDACIÓN AUTOMÁTICA
+        # ---------------------------
+        valid, error = validate_form_from_table(
+            cursor,
+            "departamentoasignatura",
+            request.form
+        )
+
+        if not valid:
+            flash(error, "danger")
+            cursor.close()
+            conn.close()
+            return redirect(request.referrer)
+
+        # Datos validados
         nombre = request.form["nombre_deptoasignatura"]
+
         try:
             departamentoasignatura_crud.update_departamento_asignatura(cursor, iddep, nombre)
             conn.commit()
@@ -1035,15 +1479,18 @@ def edit_departamento_asignatura(iddep):
         finally:
             cursor.close()
             conn.close()
+
         return redirect(url_for("list_departamentos_asignatura"))
     
     # GET
     departamento = departamentoasignatura_crud.get_departamento_asignatura(cursor, iddep)
     cursor.close()
     conn.close()
+
     if not departamento:
         flash("Departamento no encontrado.", "warning")
         return redirect(url_for("list_departamentos_asignatura"))
+
     return render_template("aulas_horarios/departamentoasignatura_form.html", departamento=departamento)
 
 @app.route("/aulas_horarios/departamentos_asignatura/delete/<int:iddep>", methods=["POST"])
@@ -1097,13 +1544,32 @@ def add_calificacion_estudiante():
     cursor = conn.cursor(dictionary=True)
 
     if request.method == "POST":
+
+        # ---------------------------
+        # VALIDACIÓN AUTOMÁTICA
+        # ---------------------------
+        valid, error = validate_form_from_table(
+            cursor,
+            "calificacion_estudiante",
+            request.form
+        )
+
+        if not valid:
+            flash(error, "danger")
+            cursor.close()
+            conn.close()
+            return redirect(request.referrer)
+
+        # Datos validados
         idevaluacion = request.form["idevaluacion"]
         idinscripcion = request.form["idinscripcion"]
         calificacion = request.form["calificacion"]
         observaciones = request.form["observaciones"]
 
         try:
-            calificacion_estudiante_crud.add_calificacion(cursor, idevaluacion, idinscripcion, calificacion, observaciones)
+            calificacion_estudiante_crud.add_calificacion(
+                cursor, idevaluacion, idinscripcion, calificacion, observaciones
+            )
             conn.commit()
             flash("Calificación añadida correctamente.", "success")
         except mysql.connector.Error as err:
@@ -1112,6 +1578,7 @@ def add_calificacion_estudiante():
         finally:
             cursor.close()
             conn.close()
+
         return redirect(url_for("list_calificacion_estudiante"))
 
     # GET
@@ -1119,7 +1586,15 @@ def add_calificacion_estudiante():
     inscripciones = calificacion_estudiante_crud.get_inscripciones(cursor)
     cursor.close()
     conn.close()
-    return render_template("calificaciones/calificacion_estudiante_form.html", calificacion=None, evaluaciones=evaluaciones, inscripciones=inscripciones)
+
+    return render_template(
+        "calificaciones/calificacion_estudiante_form.html",
+        calificacion=None,
+        evaluaciones=evaluaciones,
+        inscripciones=inscripciones
+    )
+
+
 
 @app.route("/calificaciones/calificacion_estudiante/edit/<int:idevaluacion>/<int:idinscripcion>", methods=["GET", "POST"])
 def edit_calificacion_estudiante(idevaluacion, idinscripcion):
@@ -1130,11 +1605,30 @@ def edit_calificacion_estudiante(idevaluacion, idinscripcion):
     cursor = conn.cursor(dictionary=True)
 
     if request.method == "POST":
+
+        # ---------------------------
+        # VALIDACIÓN AUTOMÁTICA
+        # ---------------------------
+        valid, error = validate_form_from_table(
+            cursor,
+            "calificacion_estudiante",
+            request.form
+        )
+
+        if not valid:
+            flash(error, "danger")
+            cursor.close()
+            conn.close()
+            return redirect(request.referrer)
+
+        # Datos validados
         calificacion = request.form["calificacion"]
         observaciones = request.form["observaciones"]
 
         try:
-            calificacion_estudiante_crud.update_calificacion(cursor, idevaluacion, idinscripcion, calificacion, observaciones)
+            calificacion_estudiante_crud.update_calificacion(
+                cursor, idevaluacion, idinscripcion, calificacion, observaciones
+            )
             conn.commit()
             flash("Calificación actualizada correctamente.", "success")
         except mysql.connector.Error as err:
@@ -1143,6 +1637,7 @@ def edit_calificacion_estudiante(idevaluacion, idinscripcion):
         finally:
             cursor.close()
             conn.close()
+
         return redirect(url_for("list_calificacion_estudiante"))
 
     # GET
@@ -1157,7 +1652,14 @@ def edit_calificacion_estudiante(idevaluacion, idinscripcion):
     inscripciones = calificacion_estudiante_crud.get_inscripciones(cursor)
     cursor.close()
     conn.close()
-    return render_template("calificaciones/calificacion_estudiante_form.html", calificacion=calificacion, evaluaciones=evaluaciones, inscripciones=inscripciones)
+
+    return render_template(
+        "calificaciones/calificacion_estudiante_form.html",
+        calificacion=calificacion,
+        evaluaciones=evaluaciones,
+        inscripciones=inscripciones
+    )
+
 
 @app.route("/calificaciones/calificacion_estudiante/delete/<int:idevaluacion>/<int:idinscripcion>", methods=["POST"])
 def delete_calificacion_estudiante(idevaluacion, idinscripcion):
@@ -1195,10 +1697,10 @@ def search_calificacion_estudiante():
     flash(f'Mostrando resultados para "{query_term}".', "info")
     return render_template("calificaciones/calificacion_estudiante_list.html", calificaciones=calificaciones)
 
-
+# VOY POR AQUI CON LA VALIDACION
 # --- Rutas para Docente (Administración Personal) ---
 
-@app.route("/docentes")
+@app.route("/gestion_docentes/admin_personal")
 def list_docentes():
     conn = get_db_connection()
     if conn is None:
@@ -1209,23 +1711,45 @@ def list_docentes():
     conn.close()
     return render_template("docentes/docente_list.html", docentes=docentes)
 
-@app.route("/docentes/add", methods=["GET", "POST"])
+@app.route("/gestion_docentes/admin_personal/add", methods=["GET", "POST"])
 def add_docente():
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_docentes"))
+    cursor = conn.cursor(dictionary=True)
     if request.method == "POST":
+
+        # ---------------------------
+        # VALIDACIÓN AUTOMÁTICA (tabla persona)
+        # ---------------------------
+        valid, error = validate_form_from_table(
+            cursor,
+            "persona",
+            request.form
+        )
+
+        if not valid:
+            flash(error, "danger")
+            cursor.close()
+            conn.close()
+            return redirect(request.referrer)
+
+        # Datos validados
         nombre = request.form["nombre"]
         apellido_paterno = request.form["apellido_paterno"]
         apellido_materno = request.form["apellido_materno"]
         correo = request.form["correo"]
         fecha_alta = request.form.get("fecha_alta") or None
         estatus = request.form.get("estatus", "A")
+
         
-        conn = get_db_connection()
-        if conn is None:
-            return redirect(url_for("list_docentes"))
         
-        cursor = conn.cursor(dictionary=True)
+        
         try:
-            docente_crud.add_docente(cursor, nombre, apellido_paterno, apellido_materno, correo, fecha_alta, estatus)
+            docente_crud.add_docente(
+                cursor, nombre, apellido_paterno, apellido_materno,
+                correo, fecha_alta, estatus
+            )
             conn.commit()
             flash("Docente añadido correctamente.", "success")
         except mysql.connector.Error as err:
@@ -1234,21 +1758,44 @@ def add_docente():
         finally:
             cursor.close()
             conn.close()
+
         return redirect(url_for("list_docentes"))
     
     return render_template("docentes/docente_form.html", docente=None)
 
-@app.route("/docentes/edit/<int:iddocente>", methods=["GET", "POST"])
+
+
+@app.route("/gestion_docentes/admin_personal/edit/<int:iddocente>", methods=["GET", "POST"])
 def edit_docente(iddocente):
+
     conn = get_db_connection()
     if conn is None:
         return redirect(url_for("list_docentes"))
+
     cursor = conn.cursor(dictionary=True)
 
     if request.method == "POST":
+
+        # ---------------------------
+        # VALIDACIÓN AUTOMÁTICA (tabla docente)
+        # ---------------------------
+        valid, error = validate_form_from_table(
+            cursor,
+            "docente",
+            request.form
+        )
+
+        if not valid:
+            flash(error, "danger")
+            cursor.close()
+            conn.close()
+            return redirect(request.referrer)
+
+        # Datos validados
         fecha_alta = request.form["fecha_alta"]
         fecha_baja = request.form.get("fecha_baja") or None
         estatus = request.form["estatus"]
+
         try:
             docente_crud.update_docente(cursor, iddocente, fecha_alta, fecha_baja, estatus)
             conn.commit()
@@ -1259,9 +1806,10 @@ def edit_docente(iddocente):
         finally:
             cursor.close()
             conn.close()
+
         return redirect(url_for("list_docentes"))
 
-    # GET - obtener información completa del docente
+    # GET
     query = """
     SELECT d.*, p.nombre, p.apellido_paterno, p.apellido_materno, p.correo
     FROM docente d
@@ -1270,16 +1818,18 @@ def edit_docente(iddocente):
     """
     cursor.execute(query, (iddocente,))
     docente = cursor.fetchone()
+
     cursor.close()
     conn.close()
-    
+
     if not docente:
         flash("Docente no encontrado.", "warning")
         return redirect(url_for("list_docentes"))
-    
+
     return render_template("docentes/docente_form.html", docente=docente)
 
-@app.route("/docentes/delete/<int:iddocente>", methods=["POST"])
+
+@app.route("/gestion_docentes/admin_personal/delete/<int:iddocente>", methods=["POST"])
 def delete_docente(iddocente):
     conn = get_db_connection()
     if conn is None:
@@ -1297,7 +1847,7 @@ def delete_docente(iddocente):
         conn.close()
     return redirect(url_for("list_docentes"))
 
-@app.route("/docentes/search")
+@app.route("/gestion_docentes/admin_personal/search")
 def search_docentes():
     query_term = request.args.get("query", "").strip()
     if not query_term:
@@ -1315,7 +1865,7 @@ def search_docentes():
 
 # --- Rutas para Historial Académico ---
 
-@app.route("/historial")
+@app.route("/gestion_estudiantes/historial")
 def list_historial():
     conn = get_db_connection()
     if conn is None:
@@ -1326,21 +1876,47 @@ def list_historial():
     conn.close()
     return render_template("estudiantes/historialacademico_list.html", historiales=historiales)
 
-@app.route("/historial/add", methods=["GET", "POST"])
+@app.route("/gestion_estudiantes/historial/add", methods=["GET", "POST"])
 def add_historial():
     conn = get_db_connection()
     if conn is None:
         return redirect(url_for("list_historial"))
     cursor = conn.cursor(dictionary=True)
 
+    # Generar esquema dinámico desde la tabla
+    
+
     if request.method == "POST":
-        matricula = request.form["matricula_alumno"]
-        idasignatura = request.form["idasignatura"]
-        idperiodo = request.form["idperiodo"]
-        calificacion = request.form.get("calificacion_final") or None
-        estatus = request.form["estatus_asignatura"]
+        form_data = {
+            "matricula": request.form.get("matricula_alumno"),
+            "idasignatura": request.form.get("idasignatura"),
+            "idperiodo": request.form.get("idperiodo"),
+            "calificacion": request.form.get("calificacion_final"),
+            "estatus": request.form.get("estatus_asignatura")
+        }
+
+        # Validación dinámica
+        valid, error = validate_form_from_table(
+            cursor,
+            "historialacademico",
+            request.form
+        )
+
+        if not valid:
+            flash(error, "danger")
+            cursor.close()
+            conn.close()
+            return redirect(request.referrer)
+
         try:
-            historialacademico_crud.add_historial(cursor, matricula, idasignatura, idperiodo, calificacion, estatus)
+            historialacademico_crud.add_historial(
+                cursor,
+                form_data["matricula"],
+                form_data["idasignatura"],
+                form_data["idperiodo"],
+                form_data["calificacion"],
+                form_data["estatus"]
+            )
             conn.commit()
             flash("Registro añadido correctamente.", "success")
         except mysql.connector.Error as err:
@@ -1349,27 +1925,62 @@ def add_historial():
         finally:
             cursor.close()
             conn.close()
+
         return redirect(url_for("list_historial"))
 
+    # GET
     estudiantes = historialacademico_crud.get_estudiantes(cursor)
     asignaturas = historialacademico_crud.get_asignaturas(cursor)
     periodos = historialacademico_crud.get_periodos(cursor)
     cursor.close()
     conn.close()
-    return render_template("estudiantes/historialacademico_form.html", historial=None, estudiantes=estudiantes, asignaturas=asignaturas, periodos=periodos)
 
-@app.route("/historial/edit/<int:idhistorial>", methods=["GET", "POST"])
+    return render_template(
+        "estudiantes/historialacademico_form.html",
+        historial=None,
+        estudiantes=estudiantes,
+        asignaturas=asignaturas,
+        periodos=periodos
+    )
+
+
+@app.route("/gestion_estudiantes/historial/edit/<int:idhistorial>", methods=["GET", "POST"])
 def edit_historial(idhistorial):
     conn = get_db_connection()
     if conn is None:
         return redirect(url_for("list_historial"))
+
     cursor = conn.cursor(dictionary=True)
 
+    
+    
+
     if request.method == "POST":
-        calificacion = request.form.get("calificacion_final") or None
-        estatus = request.form["estatus_asignatura"]
+        form_data = {
+            "calificacion": request.form.get("calificacion_final"),
+            "estatus": request.form.get("estatus_asignatura")
+        }
+
+        # Validación automática
+        valid, error = validate_form_from_table(
+            cursor,
+            "historialacademico",
+            request.form
+        )
+
+        if not valid:
+            flash(error, "danger")
+            cursor.close()
+            conn.close()
+            return redirect(request.referrer)
+
         try:
-            historialacademico_crud.update_historial(cursor, idhistorial, calificacion, estatus)
+            historialacademico_crud.update_historial(
+                cursor,
+                idhistorial,
+                form_data["calificacion"],
+                form_data["estatus"]
+            )
             conn.commit()
             flash("Registro actualizado correctamente.", "success")
         except mysql.connector.Error as err:
@@ -1378,23 +1989,35 @@ def edit_historial(idhistorial):
         finally:
             cursor.close()
             conn.close()
+
         return redirect(url_for("list_historial"))
 
+    # GET
     historial = historialacademico_crud.get_historial(cursor, idhistorial)
+
     if not historial:
         flash("Registro no encontrado.", "warning")
         cursor.close()
         conn.close()
         return redirect(url_for("list_historial"))
-    
+
     estudiantes = historialacademico_crud.get_estudiantes(cursor)
     asignaturas = historialacademico_crud.get_asignaturas(cursor)
     periodos = historialacademico_crud.get_periodos(cursor)
+
     cursor.close()
     conn.close()
-    return render_template("estudiantes/historialacademico_form.html", historial=historial, estudiantes=estudiantes, asignaturas=asignaturas, periodos=periodos)
 
-@app.route("/historial/delete/<int:idhistorial>", methods=["POST"])
+    return render_template(
+        "estudiantes/historialacademico_form.html",
+        historial=historial,
+        estudiantes=estudiantes,
+        asignaturas=asignaturas,
+        periodos=periodos
+    )
+
+
+@app.route("/gestion_estudiantes/historial/delete/<int:idhistorial>", methods=["POST"])
 def delete_historial(idhistorial):
     conn = get_db_connection()
     if conn is None:
@@ -1412,7 +2035,7 @@ def delete_historial(idhistorial):
         conn.close()
     return redirect(url_for("list_historial"))
 
-@app.route("/historial/search")
+@app.route("/gestion_estudiantes/historial/search")
 def search_historial():
     query_term = request.args.get("query", "").strip()
     if not query_term:
@@ -1430,7 +2053,7 @@ def search_historial():
 
 # --- Rutas para Periodo de Inscripciones ---
 
-@app.route("/periodos")
+@app.route("/cursos_planes/periodos")
 def list_periodos():
     conn = get_db_connection()
     if conn is None:
@@ -1441,21 +2064,47 @@ def list_periodos():
     conn.close()
     return render_template("cursos/periodoinscripciones_list.html", periodos=periodos)
 
-@app.route("/periodos/add", methods=["GET", "POST"])
+@app.route("/cursos_planes/periodos/add", methods=["GET", "POST"])
 def add_periodo():
     conn = get_db_connection()
     if conn is None:
         return redirect(url_for("list_periodos"))
-    cursor = conn.cursor()
+
+    cursor = conn.cursor(dictionary=True)
+
+    
 
     if request.method == "POST":
-        descripcion = request.form["descripcion_periodo"]
-        fecha_inicio = request.form["fecha_inicio_insc"]
-        fecha_fin = request.form["fecha_fin_insc"]
-        costo_credito = request.form["costo_por_credito"]
-        estatus = request.form.get("estatus", "ABIERTO")
+        form_data = {
+            "descripcion": request.form.get("descripcion_periodo"),
+            "fecha_inicio": request.form.get("fecha_inicio_insc"),
+            "fecha_fin": request.form.get("fecha_fin_insc"),
+            "costo_credito": request.form.get("costo_por_credito"),
+            "estatus": request.form.get("estatus", "ABIERTO")
+        }
+
+        # Validar automáticamente
+        valid, error = validate_form_from_table(
+            cursor,
+            "periodoinscripciones",
+            request.form
+        )
+
+        if not valid:
+            flash(error, "danger")
+            cursor.close()
+            conn.close()
+            return redirect(request.referrer)
+
         try:
-            periodoinscripciones_crud.add_periodo(cursor, descripcion, fecha_inicio, fecha_fin, costo_credito, estatus)
+            periodoinscripciones_crud.add_periodo(
+                cursor,
+                form_data["descripcion"],
+                form_data["fecha_inicio"],
+                form_data["fecha_fin"],
+                form_data["costo_credito"],
+                form_data["estatus"]
+            )
             conn.commit()
             flash("Periodo añadido correctamente.", "success")
         except mysql.connector.Error as err:
@@ -1464,27 +2113,57 @@ def add_periodo():
         finally:
             cursor.close()
             conn.close()
+
         return redirect(url_for("list_periodos"))
 
     cursor.close()
     conn.close()
     return render_template("cursos/periodoinscripciones_form.html", periodo=None)
 
-@app.route("/periodos/edit/<int:idperiodo>", methods=["GET", "POST"])
+
+
+@app.route("/cursos_planes/periodos/edit/<int:idperiodo>", methods=["GET", "POST"])
 def edit_periodo(idperiodo):
     conn = get_db_connection()
     if conn is None:
         return redirect(url_for("list_periodos"))
+
     cursor = conn.cursor(dictionary=True)
 
+    
+
     if request.method == "POST":
-        descripcion = request.form["descripcion_periodo"]
-        fecha_inicio = request.form["fecha_inicio_insc"]
-        fecha_fin = request.form["fecha_fin_insc"]
-        costo_credito = request.form["costo_por_credito"]
-        estatus = request.form["estatus"]
+        form_data = {
+            "descripcion": request.form.get("descripcion_periodo"),
+            "fecha_inicio": request.form.get("fecha_inicio_insc"),
+            "fecha_fin": request.form.get("fecha_fin_insc"),
+            "costo_credito": request.form.get("costo_por_credito"),
+            "estatus": request.form.get("estatus")
+        }
+
+        # Validación automática
+        valid, error = validate_form_from_table(
+            cursor,
+            "periodoinscripciones",
+            request.form
+        )
+
+        if not valid:
+            flash(error, "danger")
+            cursor.close()
+            conn.close()
+            return redirect(request.referrer)
+
         try:
-            periodoinscripciones_crud.update_periodo(cursor, idperiodo, descripcion, fecha_inicio, fecha_fin, costo_credito, estatus)
+            periodoinscripciones_crud.update_periodo(
+                cursor,
+                idperiodo,
+                form_data["descripcion"],
+                form_data["fecha_inicio"],
+                form_data["fecha_fin"],
+                form_data["costo_credito"],
+                form_data["estatus"]
+            )
             conn.commit()
             flash("Periodo actualizado correctamente.", "success")
         except mysql.connector.Error as err:
@@ -1493,20 +2172,24 @@ def edit_periodo(idperiodo):
         finally:
             cursor.close()
             conn.close()
+
         return redirect(url_for("list_periodos"))
 
+    # GET
     periodo = periodoinscripciones_crud.get_periodo(cursor, idperiodo)
+
     if not periodo:
         flash("Periodo no encontrado.", "warning")
         cursor.close()
         conn.close()
         return redirect(url_for("list_periodos"))
-    
+
     cursor.close()
     conn.close()
     return render_template("cursos/periodoinscripciones_form.html", periodo=periodo)
 
-@app.route("/periodos/delete/<int:idperiodo>", methods=["POST"])
+
+@app.route("/cursos_planes/periodos/delete/<int:idperiodo>", methods=["POST"])
 def delete_periodo(idperiodo):
     conn = get_db_connection()
     if conn is None:
@@ -1524,7 +2207,7 @@ def delete_periodo(idperiodo):
         conn.close()
     return redirect(url_for("list_periodos"))
 
-@app.route("/periodos/search")
+@app.route("/cursos_planes/periodos/search")
 def search_periodos():
     query_term = request.args.get("query", "").strip()
     if not query_term:
@@ -1542,7 +2225,7 @@ def search_periodos():
 
 # --- Rutas para Inscripciones ---
 
-@app.route("/inscripciones")
+@app.route("/gestion_estudiantes/inscripciones")
 def list_inscripciones():
     conn = get_db_connection()
     if conn is None:
@@ -1553,74 +2236,149 @@ def list_inscripciones():
     conn.close()
     return render_template("estudiantes/inscripcion_list.html", inscripciones=inscripciones)
 
-@app.route("/inscripciones/add", methods=["GET", "POST"])
+@app.route("/gestion_estudiantes/inscripciones/add", methods=["GET", "POST"])
 def add_inscripcion():
     conn = get_db_connection()
     if conn is None:
         return redirect(url_for("list_inscripciones"))
     cursor = conn.cursor(dictionary=True)
 
+    
+
     if request.method == "POST":
-        matricula = request.form["matricula_alumno"]
-        idperiodo = request.form["idperiodo"]
-        fecha = request.form["fecha_inscripcion"]
-        motivo = request.form.get("motivo_inscripcion") or None
-        estatus = request.form.get("estatus", "INICIADA")
+        form_data = {
+            "matricula": request.form.get("matricula_alumno"),
+            "idperiodo": request.form.get("idperiodo"),
+            "fecha": request.form.get("fecha_inscripcion"),
+            "motivo": request.form.get("motivo_inscripcion") or None,
+            "estatus": request.form.get("estatus", "INICIADA")
+        }
+
+        # Validación automática
+        valid, error = validate_form_from_table(
+            cursor,
+            "inscripcion",
+            request.form
+        )
+
+        if not valid:
+            flash(error, "danger")
+            cursor.close()
+            conn.close()
+            return redirect(request.referrer)
+
         try:
-            inscripcion_crud.add_inscripcion(cursor, matricula, idperiodo, fecha, motivo, estatus)
+            inscripcion_crud.add_inscripcion(
+                cursor,
+                form_data["matricula"],
+                form_data["idperiodo"],
+                form_data["fecha"],
+                form_data["motivo"],
+                form_data["estatus"]
+            )
             conn.commit()
             flash("Inscripción añadida correctamente.", "success")
+
         except mysql.connector.Error as err:
             conn.rollback()
             flash(f"Error: {err}", "danger")
+
         finally:
             cursor.close()
             conn.close()
+
         return redirect(url_for("list_inscripciones"))
 
+    # GET
     estudiantes = inscripcion_crud.get_estudiantes(cursor)
     periodos = inscripcion_crud.get_periodos(cursor)
+
     cursor.close()
     conn.close()
-    return render_template("estudiantes/inscripcion_form.html", inscripcion=None, estudiantes=estudiantes, periodos=periodos)
 
-@app.route("/inscripciones/edit/<int:idinscripcion>", methods=["GET", "POST"])
+    return render_template(
+        "estudiantes/inscripcion_form.html",
+        inscripcion=None,
+        estudiantes=estudiantes,
+        periodos=periodos
+    )
+
+
+
+@app.route("/gestion_estudiantes/inscripciones/edit/<int:idinscripcion>", methods=["GET", "POST"])
 def edit_inscripcion(idinscripcion):
     conn = get_db_connection()
     if conn is None:
         return redirect(url_for("list_inscripciones"))
     cursor = conn.cursor(dictionary=True)
 
+    
+
     if request.method == "POST":
-        fecha = request.form["fecha_inscripcion"]
-        motivo = request.form.get("motivo_inscripcion") or None
-        estatus = request.form["estatus"]
+        form_data = {
+            "fecha": request.form.get("fecha_inscripcion"),
+            "motivo": request.form.get("motivo_inscripcion") or None,
+            "estatus": request.form.get("estatus")
+        }
+
+        # Validar
+        valid, error = validate_form_from_table(
+            cursor,
+            "inscripcion",
+            request.form
+        )
+
+        if not valid:
+            flash(error, "danger")
+            cursor.close()
+            conn.close()
+            return redirect(request.referrer)
+
         try:
-            inscripcion_crud.update_inscripcion(cursor, idinscripcion, fecha, motivo, estatus)
+            inscripcion_crud.update_inscripcion(
+                cursor,
+                idinscripcion,
+                form_data["fecha"],
+                form_data["motivo"],
+                form_data["estatus"]
+            )
             conn.commit()
             flash("Inscripción actualizada correctamente.", "success")
+
         except mysql.connector.Error as err:
             conn.rollback()
             flash(f"Error: {err}", "danger")
+
         finally:
             cursor.close()
             conn.close()
+
         return redirect(url_for("list_inscripciones"))
 
+    # GET
     inscripcion = inscripcion_crud.get_inscripcion(cursor, idinscripcion)
+
     if not inscripcion:
         flash("Inscripción no encontrada.", "warning")
         cursor.close()
         conn.close()
         return redirect(url_for("list_inscripciones"))
-    
+
     estudiantes = inscripcion_crud.get_estudiantes(cursor)
     periodos = inscripcion_crud.get_periodos(cursor)
+
     cursor.close()
     conn.close()
-    return render_template("estudiantes/inscripcion_form.html", inscripcion=inscripcion, estudiantes=estudiantes, periodos=periodos)
 
-@app.route("/inscripciones/delete/<int:idinscripcion>", methods=["POST"])
+    return render_template(
+        "estudiantes/inscripcion_form.html",
+        inscripcion=inscripcion,
+        estudiantes=estudiantes,
+        periodos=periodos
+    )
+
+
+@app.route("/gestion_estudiantes/inscripciones/delete/<int:idinscripcion>", methods=["POST"])
 def delete_inscripcion(idinscripcion):
     conn = get_db_connection()
     if conn is None:
@@ -1638,7 +2396,7 @@ def delete_inscripcion(idinscripcion):
         conn.close()
     return redirect(url_for("list_inscripciones"))
 
-@app.route("/inscripciones/search")
+@app.route("/gestion_estudiantes/inscripciones/search")
 def search_inscripciones():
     query_term = request.args.get("query", "").strip()
     if not query_term:
@@ -1656,7 +2414,7 @@ def search_inscripciones():
 
 # --- Rutas para Clases Programadas (Asignación a Cursos) ---
 
-@app.route("/clases")
+@app.route("/gestion_docentes/clases")
 def list_clases():
     conn = get_db_connection()
     if conn is None:
@@ -1667,86 +2425,172 @@ def list_clases():
     conn.close()
     return render_template("docentes/claseprogramada_list.html", clases=clases)
 
-@app.route("/clases/add", methods=["GET", "POST"])
+@app.route("/gestion_docentes/clases/add", methods=["GET", "POST"])
 def add_clase():
     conn = get_db_connection()
     if conn is None:
         return redirect(url_for("list_clases"))
     cursor = conn.cursor(dictionary=True)
 
+    
+
     if request.method == "POST":
-        idasignatura = request.form["idasignatura"]
-        modalidad = request.form["modalidad"]
-        idhorario = request.form["idhorario"]
-        iddocente = request.form["iddocente"]
-        idperiodo = request.form["idperiodo"]
-        idcalendario = request.form["idcalendario"]
-        idioma = request.form.get("idioma", "ESP")
+        form_data = {
+            "idasignatura": request.form.get("idasignatura"),
+            "modalidad": request.form.get("modalidad"),
+            "idhorario": request.form.get("idhorario"),
+            "iddocente": request.form.get("iddocente"),
+            "idperiodo": request.form.get("idperiodo"),
+            "idcalendario": request.form.get("idcalendario"),
+            "idioma": request.form.get("idioma", "ESP")
+        }
+
+        # Validar dinámicamente con el esquema
+        valid, error = validate_form_from_table(
+            cursor,
+            "claseprogramada",
+            request.form
+        )
+
+        if not valid:
+            flash(error, "danger")
+            cursor.close()
+            conn.close()
+            return redirect(request.referrer)
+
         try:
-            claseprogramada_crud.add_clase(cursor, idasignatura, modalidad, idhorario, iddocente, idperiodo, idcalendario, idioma)
+            claseprogramada_crud.add_clase(
+                cursor,
+                form_data["idasignatura"],
+                form_data["modalidad"],
+                form_data["idhorario"],
+                form_data["iddocente"],
+                form_data["idperiodo"],
+                form_data["idcalendario"],
+                form_data["idioma"]
+            )
             conn.commit()
             flash("Clase añadida correctamente.", "success")
+
         except mysql.connector.Error as err:
             conn.rollback()
             flash(f"Error: {err}", "danger")
+
         finally:
             cursor.close()
             conn.close()
+
         return redirect(url_for("list_clases"))
 
+    # GET
     asignaturas = claseprogramada_crud.get_asignaturas(cursor)
     docentes = claseprogramada_crud.get_docentes(cursor)
     horarios = claseprogramada_crud.get_horarios(cursor)
     periodos = claseprogramada_crud.get_periodos(cursor)
     calendarios = claseprogramada_crud.get_calendarios(cursor)
+
     cursor.close()
     conn.close()
-    return render_template("docentes/claseprogramada_form.html", clase=None, asignaturas=asignaturas, docentes=docentes, horarios=horarios, periodos=periodos, calendarios=calendarios)
 
-@app.route("/clases/edit/<int:idclase>", methods=["GET", "POST"])
+    return render_template(
+        "docentes/claseprogramada_form.html",
+        clase=None,
+        asignaturas=asignaturas,
+        docentes=docentes,
+        horarios=horarios,
+        periodos=periodos,
+        calendarios=calendarios
+    )
+
+
+
+@app.route("/gestion_docentes/clases/edit/<int:idclase>", methods=["GET", "POST"])
 def edit_clase(idclase):
     conn = get_db_connection()
     if conn is None:
         return redirect(url_for("list_clases"))
     cursor = conn.cursor(dictionary=True)
 
+    
+
     if request.method == "POST":
-        idasignatura = request.form["idasignatura"]
-        modalidad = request.form["modalidad"]
-        idhorario = request.form["idhorario"]
-        iddocente = request.form["iddocente"]
-        idperiodo = request.form["idperiodo"]
-        idcalendario = request.form["idcalendario"]
-        idioma = request.form["idioma"]
+        form_data = {
+            "idasignatura": request.form.get("idasignatura"),
+            "modalidad": request.form.get("modalidad"),
+            "idhorario": request.form.get("idhorario"),
+            "iddocente": request.form.get("iddocente"),
+            "idperiodo": request.form.get("idperiodo"),
+            "idcalendario": request.form.get("idcalendario"),
+            "idioma": request.form.get("idioma")
+        }
+
+        valid, error = validate_form_from_table(
+            cursor,
+            "claseprogramada",
+            request.form
+        )
+
+        if not valid:
+            flash(error, "danger")
+            cursor.close()
+            conn.close()
+            return redirect(request.referrer)
+
         try:
-            claseprogramada_crud.update_clase(cursor, idclase, idasignatura, modalidad, idhorario, iddocente, idperiodo, idcalendario, idioma)
+            claseprogramada_crud.update_clase(
+                cursor,
+                idclase,
+                form_data["idasignatura"],
+                form_data["modalidad"],
+                form_data["idhorario"],
+                form_data["iddocente"],
+                form_data["idperiodo"],
+                form_data["idcalendario"],
+                form_data["idioma"]
+            )
             conn.commit()
             flash("Clase actualizada correctamente.", "success")
+
         except mysql.connector.Error as err:
             conn.rollback()
             flash(f"Error: {err}", "danger")
+
         finally:
             cursor.close()
             conn.close()
+
         return redirect(url_for("list_clases"))
 
+    # GET
     clase = claseprogramada_crud.get_clase(cursor, idclase)
+
     if not clase:
         flash("Clase no encontrada.", "warning")
         cursor.close()
         conn.close()
         return redirect(url_for("list_clases"))
-    
+
     asignaturas = claseprogramada_crud.get_asignaturas(cursor)
     docentes = claseprogramada_crud.get_docentes(cursor)
     horarios = claseprogramada_crud.get_horarios(cursor)
     periodos = claseprogramada_crud.get_periodos(cursor)
     calendarios = claseprogramada_crud.get_calendarios(cursor)
+
     cursor.close()
     conn.close()
-    return render_template("docentes/claseprogramada_form.html", clase=clase, asignaturas=asignaturas, docentes=docentes, horarios=horarios, periodos=periodos, calendarios=calendarios)
 
-@app.route("/clases/delete/<int:idclase>", methods=["POST"])
+    return render_template(
+        "docentes/claseprogramada_form.html",
+        clase=clase,
+        asignaturas=asignaturas,
+        docentes=docentes,
+        horarios=horarios,
+        periodos=periodos,
+        calendarios=calendarios
+    )
+
+
+@app.route("/gestion_docentes/clases/delete/<int:idclase>", methods=["POST"])
 def delete_clase(idclase):
     conn = get_db_connection()
     if conn is None:
@@ -1764,7 +2608,7 @@ def delete_clase(idclase):
         conn.close()
     return redirect(url_for("list_clases"))
 
-@app.route("/clases/search")
+@app.route("/gestion_docentes/clases/search")
 def search_clases():
     query_term = request.args.get("query", "").strip()
     if not query_term:
@@ -1782,7 +2626,7 @@ def search_clases():
 
 # --- Rutas para Capacitación ---
 
-@app.route("/capacitaciones")
+@app.route("/gestion_docentes/capacitaciones")
 def list_capacitaciones():
     conn = get_db_connection()
     if conn is None:
@@ -1793,65 +2637,115 @@ def list_capacitaciones():
     conn.close()
     return render_template("docentes/capacitacion_list.html", capacitaciones=capacitaciones)
 
-@app.route("/capacitaciones/add", methods=["GET", "POST"])
+@app.route("/gestion_docentes/capacitaciones/add", methods=["GET", "POST"])
 def add_capacitacion():
     conn = get_db_connection()
     if conn is None:
         return redirect(url_for("list_capacitaciones"))
-    cursor = conn.cursor()
+
+    cursor = conn.cursor(dictionary=True)
+
+    
+
     if request.method == "POST":
-        desc = request.form["descripcion"]
-        inst = request.form.get("institucion") or None
-        inicio = request.form["fecha_inicio"]
-        fin = request.form.get("fecha_fin") or None
-        horas = request.form.get("horas") or None
+        form_data = dict(request.form)
+
+        # Validar usando el esquema generado
+        valid, error = validate_form_from_table(
+            cursor,
+            "capacitaciones",
+            request.form
+        )
+
+        if not valid:
+            flash(error, "danger")
+            cursor.close()
+            conn.close()
+            return redirect(request.referrer)
+
         try:
-            capacitacion_crud.add_capacitacion(cursor, desc, inicio, fin, horas, inst)
+            capacitacion_crud.add_capacitacion(
+                cursor,
+                request.form["descripcion"],
+                request.form["fecha_inicio"],
+                request.form.get("fecha_fin"),
+                request.form.get("horas"),
+                request.form.get("institucion")
+            )
             conn.commit()
             flash("Capacitación añadida correctamente.", "success")
         except mysql.connector.Error as err:
             conn.rollback()
-            flash(f"Error: {err}", "danger")
+            flash(f"Error al añadir capacitación: {err}", "danger")
         finally:
             cursor.close()
             conn.close()
+
         return redirect(url_for("list_capacitaciones"))
+
     cursor.close()
     conn.close()
     return render_template("docentes/capacitacion_form.html", capacitacion=None)
 
-@app.route("/capacitaciones/edit/<int:idcapacitacion>", methods=["GET", "POST"])
+@app.route("/gestion_docentes/capacitaciones/edit/<int:idcapacitacion>", methods=["GET", "POST"])
 def edit_capacitacion(idcapacitacion):
     conn = get_db_connection()
     if conn is None:
         return redirect(url_for("list_capacitaciones"))
+
     cursor = conn.cursor(dictionary=True)
+
+    
+
     if request.method == "POST":
-        desc = request.form["descripcion"]
-        inst = request.form.get("institucion") or None
-        inicio = request.form["fecha_inicio"]
-        fin = request.form.get("fecha_fin") or None
-        horas = request.form.get("horas") or None
+        form_data = dict(request.form)
+
+        valid, error = validate_form_from_table(
+            cursor,
+            "capacitaciones",
+            request.form
+        )
+
+        if not valid:
+            flash(error, "danger")
+            cursor.close()
+            conn.close()
+            return redirect(request.referrer)
+
         try:
-            capacitacion_crud.update_capacitacion(cursor, idcapacitacion, desc, inicio, fin, horas, inst)
+            capacitacion_crud.update_capacitacion(
+                cursor,
+                idcapacitacion,
+                request.form["descripcion"],
+                request.form["fecha_inicio"],
+                request.form.get("fecha_fin"),
+                request.form.get("horas"),
+                request.form.get("institucion")
+            )
             conn.commit()
             flash("Capacitación actualizada correctamente.", "success")
         except mysql.connector.Error as err:
             conn.rollback()
-            flash(f"Error: {err}", "danger")
+            flash(f"Error al actualizar capacitación: {err}", "danger")
         finally:
             cursor.close()
             conn.close()
+
         return redirect(url_for("list_capacitaciones"))
+
     capacitacion = capacitacion_crud.get_capacitacion(cursor, idcapacitacion)
+
     cursor.close()
     conn.close()
+
     if not capacitacion:
         flash("Capacitación no encontrada.", "warning")
         return redirect(url_for("list_capacitaciones"))
+
     return render_template("docentes/capacitacion_form.html", capacitacion=capacitacion)
 
-@app.route("/capacitaciones/delete/<int:idcapacitacion>", methods=["POST"])
+
+@app.route("/gestion_docentes/capacitaciones/delete/<int:idcapacitacion>", methods=["POST"])
 def delete_capacitacion(idcapacitacion):
     conn = get_db_connection()
     if conn is None:
@@ -1869,7 +2763,7 @@ def delete_capacitacion(idcapacitacion):
         conn.close()
     return redirect(url_for("list_capacitaciones"))
 
-@app.route("/capacitaciones/search")
+@app.route("/gestion_docentes/capacitaciones/search")
 def search_capacitaciones():
     query_term = request.args.get("query", "").strip()
     if not query_term:
@@ -1887,7 +2781,7 @@ def search_capacitaciones():
 
 # --- Rutas para Prerequisitos ---
 
-@app.route("/prerequisitos")
+@app.route("/cursos_planes/prerequisitos")
 def list_prerequisitos():
     conn = get_db_connection()
     if conn is None:
@@ -1898,32 +2792,58 @@ def list_prerequisitos():
     conn.close()
     return render_template("cursos/prerequisito_list.html", prerequisitos=prerequisitos)
 
-@app.route("/prerequisitos/add", methods=["GET", "POST"])
+@app.route("/cursos_planes/prerequisitos/add", methods=["GET", "POST"])
 def add_prerequisito():
     conn = get_db_connection()
     if conn is None:
         return redirect(url_for("list_prerequisitos"))
+
     cursor = conn.cursor(dictionary=True)
+
+    
+
     if request.method == "POST":
-        idasignatura = request.form["idasignatura"]
-        idasignatura_prereq = request.form["idasignatura_prereq"]
+        form_data = dict(request.form)
+
+        # Validar datos
+        valid, error = validate_form_from_table(
+            cursor,
+            "prerequisito_asignatura",
+            request.form
+        )
+
+        if not valid:
+            flash(error, "danger")
+            cursor.close()
+            conn.close()
+            return redirect(request.referrer)
+
         try:
-            prerequisito_crud.add_prerequisito(cursor, idasignatura, idasignatura_prereq)
+            prerequisito_crud.add_prerequisito(
+                cursor,
+                request.form["idasignatura"],
+                request.form["idasignatura_prereq"]
+            )
             conn.commit()
             flash("Prerequisito añadido correctamente.", "success")
         except mysql.connector.Error as err:
             conn.rollback()
-            flash(f"Error: {err}", "danger")
+            flash(f"Error al añadir prerequisito: {err}", "danger")
         finally:
             cursor.close()
             conn.close()
+
         return redirect(url_for("list_prerequisitos"))
+
     asignaturas = prerequisito_crud.get_asignaturas(cursor)
+
     cursor.close()
     conn.close()
+
     return render_template("cursos/prerequisito_form.html", asignaturas=asignaturas)
 
-@app.route("/prerequisitos/delete/<int:idasignatura>/<int:idasignatura_prereq>", methods=["POST"])
+
+@app.route("/cursos_planes/prerequisitos/delete/<int:idasignatura>/<int:idasignatura_prereq>", methods=["POST"])
 def delete_prerequisito(idasignatura, idasignatura_prereq):
     conn = get_db_connection()
     if conn is None:
@@ -1941,7 +2861,7 @@ def delete_prerequisito(idasignatura, idasignatura_prereq):
         conn.close()
     return redirect(url_for("list_prerequisitos"))
 
-@app.route("/prerequisitos/search")
+@app.route("/cursos_planes/prerequisitos/search")
 def search_prerequisitos():
     query_term = request.args.get("query", "").strip()
     if not query_term:
@@ -1959,7 +2879,7 @@ def search_prerequisitos():
 
 # --- Rutas para Evaluaciones ---
 
-@app.route("/evaluaciones")
+@app.route("/calificaciones/evaluaciones")
 def list_evaluaciones():
     conn = get_db_connection()
     if conn is None:
@@ -1970,68 +2890,114 @@ def list_evaluaciones():
     conn.close()
     return render_template("calificaciones/evaluacion_list.html", evaluaciones=evaluaciones)
 
-@app.route("/evaluaciones/add", methods=["GET", "POST"])
+@app.route("/calificaciones/evaluaciones/add", methods=["GET", "POST"])
 def add_evaluacion():
     conn = get_db_connection()
     if conn is None:
         return redirect(url_for("list_evaluaciones"))
+
     cursor = conn.cursor(dictionary=True)
+
+
     if request.method == "POST":
-        idclase = request.form["idclase"]
-        tipo = request.form["tipo"]
-        desc = request.form.get("descripcion") or None
-        fecha = request.form.get("fecha") or None
-        porc = request.form.get("porcentaje") or None
+        form_data = dict(request.form)
+
+        # Validación automática
+        success, validated = validate_form_from_table(cursor, "evaluaciones", form_data)
+
+        if not success:
+            flash(f"Error de validación: {validated}", "danger")
+            cursor.close()
+            conn.close()
+            return redirect(url_for("add_evaluacion"))
+
         try:
-            evaluacion_crud.add_evaluacion(cursor, idclase, tipo, desc, fecha, porc)
+            evaluacion_crud.add_evaluacion(
+                cursor,
+                validated["idclase"],
+                validated["tipo"],
+                validated.get("descripcion"),
+                validated.get("fecha"),
+                validated.get("porcentaje")
+            )
             conn.commit()
             flash("Evaluación añadida correctamente.", "success")
         except mysql.connector.Error as err:
             conn.rollback()
-            flash(f"Error: {err}", "danger")
+            flash(f"Error al añadir evaluación: {err}", "danger")
         finally:
             cursor.close()
             conn.close()
+
         return redirect(url_for("list_evaluaciones"))
+
     clases = evaluacion_crud.get_clases(cursor)
     cursor.close()
     conn.close()
-    return render_template("calificaciones/evaluacion_form.html", evaluacion=None, clases=clases)
 
-@app.route("/evaluaciones/edit/<int:idevaluacion>", methods=["GET", "POST"])
+    return render_template("calificaciones/evaluacion_form.html",
+                           evaluacion=None,
+                           clases=clases)
+
+
+@app.route("/calificaciones/evaluaciones/edit/<int:idevaluacion>", methods=["GET", "POST"])
 def edit_evaluacion(idevaluacion):
     conn = get_db_connection()
     if conn is None:
         return redirect(url_for("list_evaluaciones"))
+
     cursor = conn.cursor(dictionary=True)
+
+
     if request.method == "POST":
-        tipo = request.form["tipo"]
-        desc = request.form.get("descripcion") or None
-        fecha = request.form.get("fecha") or None
-        porc = request.form.get("porcentaje") or None
+        form_data = dict(request.form)
+
+        # Validar formulario
+        success, validated = validate_form_from_table(cursor, "evaluaciones", form_data)
+
+        if not success:
+            flash(f"Error de validación: {validated}", "danger")
+            cursor.close()
+            conn.close()
+            return redirect(url_for("edit_evaluacion", idevaluacion=idevaluacion))
+
         try:
-            evaluacion_crud.update_evaluacion(cursor, idevaluacion, tipo, desc, fecha, porc)
+            evaluacion_crud.update_evaluacion(
+                cursor,
+                idevaluacion,
+                validated["tipo"],
+                validated.get("descripcion"),
+                validated.get("fecha"),
+                validated.get("porcentaje")
+            )
             conn.commit()
             flash("Evaluación actualizada correctamente.", "success")
         except mysql.connector.Error as err:
             conn.rollback()
-            flash(f"Error: {err}", "danger")
+            flash(f"Error al actualizar evaluación: {err}", "danger")
         finally:
             cursor.close()
             conn.close()
+
         return redirect(url_for("list_evaluaciones"))
+
     evaluacion = evaluacion_crud.get_evaluacion(cursor, idevaluacion)
     if not evaluacion:
         flash("Evaluación no encontrada.", "warning")
         cursor.close()
         conn.close()
         return redirect(url_for("list_evaluaciones"))
+
     clases = evaluacion_crud.get_clases(cursor)
     cursor.close()
     conn.close()
-    return render_template("calificaciones/evaluacion_form.html", evaluacion=evaluacion, clases=clases)
 
-@app.route("/evaluaciones/delete/<int:idevaluacion>", methods=["POST"])
+    return render_template("calificaciones/evaluacion_form.html",
+                           evaluacion=evaluacion,
+                           clases=clases)
+
+
+@app.route("/calificaciones/evaluaciones/delete/<int:idevaluacion>", methods=["POST"])
 def delete_evaluacion(idevaluacion):
     conn = get_db_connection()
     if conn is None:
@@ -2049,7 +3015,7 @@ def delete_evaluacion(idevaluacion):
         conn.close()
     return redirect(url_for("list_evaluaciones"))
 
-@app.route("/evaluaciones/search")
+@app.route("/calificaciones/evaluaciones/search")
 def search_evaluaciones():
     query_term = request.args.get("query", "").strip()
     if not query_term:
@@ -2067,7 +3033,7 @@ def search_evaluaciones():
 
 # --- Rutas para Asistencia ---
 
-@app.route("/asistencias")
+@app.route("/asistencia/asistencias")
 def list_asistencias():
     conn = get_db_connection()
     if conn is None:
@@ -2078,72 +3044,122 @@ def list_asistencias():
     conn.close()
     return render_template("asistencia/asistencia_list.html", asistencias=asistencias)
 
-@app.route("/asistencias/add", methods=["GET", "POST"])
+@app.route("/asistencia/asistencias/add", methods=["GET", "POST"])
 def add_asistencia():
     conn = get_db_connection()
     if conn is None:
         return redirect(url_for("list_asistencias"))
+
     cursor = conn.cursor(dictionary=True)
+
+
     if request.method == "POST":
-        idclase = request.form["idclase"]
-        fecha = request.form["fecha"]
-        tipo = request.form["tipo"]
-        matricula = request.form.get("matricula") or None
-        iddocente = request.form.get("iddocente") or None
-        estatus = request.form["estatus"]
-        observaciones = request.form.get("observaciones") or None
+        form_data = dict(request.form)
+
+        # Validación
+        success, validated = validate_form_from_table(cursor, "asistencias", form_data)
+
+        if not success:
+            flash(f"Error de validación: {validated}", "danger")
+            cursor.close()
+            conn.close()
+            return redirect(url_for("add_asistencia"))
+
         try:
-            asistencia_crud.add_asistencia(cursor, idclase, fecha, tipo, matricula, iddocente, estatus, observaciones)
+            asistencia_crud.add_asistencia(
+                cursor,
+                validated["idclase"],
+                validated["fecha"],
+                validated["tipo"],
+                validated.get("matricula"),
+                validated.get("iddocente"),
+                validated["estatus"],
+                validated.get("observaciones")
+            )
             conn.commit()
             flash("Asistencia añadida correctamente.", "success")
         except mysql.connector.Error as err:
             conn.rollback()
-            flash(f"Error: {err}", "danger")
+            flash(f"Error al añadir asistencia: {err}", "danger")
         finally:
             cursor.close()
             conn.close()
+
         return redirect(url_for("list_asistencias"))
+
     clases = asistencia_crud.get_clases(cursor)
     estudiantes = asistencia_crud.get_estudiantes(cursor)
     docentes = asistencia_crud.get_docentes(cursor)
     cursor.close()
     conn.close()
-    return render_template("asistencia/asistencia_form.html", asistencia=None, clases=clases, estudiantes=estudiantes, docentes=docentes)
 
-@app.route("/asistencias/edit/<int:idasistencia>", methods=["GET", "POST"])
+    return render_template("asistencia/asistencia_form.html",
+                           asistencia=None,
+                           clases=clases,
+                           estudiantes=estudiantes,
+                           docentes=docentes)
+
+
+@app.route("/asistencia/asistencias/edit/<int:idasistencia>", methods=["GET", "POST"])
 def edit_asistencia(idasistencia):
     conn = get_db_connection()
     if conn is None:
         return redirect(url_for("list_asistencias"))
+
     cursor = conn.cursor(dictionary=True)
+
+
     if request.method == "POST":
-        estatus = request.form["estatus"]
-        observaciones = request.form.get("observaciones") or None
+        form_data = dict(request.form)
+
+        # Validación dinámica
+        success, validated = validate_form_from_table(cursor, "asistencias", form_data)
+
+        if not success:
+            flash(f"Error de validación: {validated}", "danger")
+            cursor.close()
+            conn.close()
+            return redirect(url_for("edit_asistencia", idasistencia=idasistencia))
+
         try:
-            asistencia_crud.update_asistencia(cursor, idasistencia, estatus, observaciones)
+            asistencia_crud.update_asistencia(
+                cursor,
+                idasistencia,
+                validated["estatus"],
+                validated.get("observaciones")
+            )
             conn.commit()
             flash("Asistencia actualizada correctamente.", "success")
         except mysql.connector.Error as err:
             conn.rollback()
-            flash(f"Error: {err}", "danger")
+            flash(f"Error al actualizar asistencia: {err}", "danger")
         finally:
             cursor.close()
             conn.close()
+
         return redirect(url_for("list_asistencias"))
+
     asistencia = asistencia_crud.get_asistencia(cursor, idasistencia)
     if not asistencia:
         flash("Asistencia no encontrada.", "warning")
         cursor.close()
         conn.close()
         return redirect(url_for("list_asistencias"))
+
     clases = asistencia_crud.get_clases(cursor)
     estudiantes = asistencia_crud.get_estudiantes(cursor)
     docentes = asistencia_crud.get_docentes(cursor)
     cursor.close()
     conn.close()
-    return render_template("asistencia/asistencia_form.html", asistencia=asistencia, clases=clases, estudiantes=estudiantes, docentes=docentes)
 
-@app.route("/asistencias/delete/<int:idasistencia>", methods=["POST"])
+    return render_template("asistencia/asistencia_form.html",
+                           asistencia=asistencia,
+                           clases=clases,
+                           estudiantes=estudiantes,
+                           docentes=docentes)
+
+
+@app.route("/asistencia/asistencias/delete/<int:idasistencia>", methods=["POST"])
 def delete_asistencia(idasistencia):
     conn = get_db_connection()
     if conn is None:
@@ -2161,7 +3177,7 @@ def delete_asistencia(idasistencia):
         conn.close()
     return redirect(url_for("list_asistencias"))
 
-@app.route("/asistencias/search")
+@app.route("/asistencia/asistencias/search")
 def search_asistencias():
     query_term = request.args.get("query", "").strip()
     if not query_term:
@@ -2179,7 +3195,7 @@ def search_asistencias():
 
 # --- Rutas para Aulas ---
 
-@app.route("/aulas")
+@app.route("/aulas_horarios/aulas")
 def list_aulas():
     conn = get_db_connection()
     if conn is None:
@@ -2190,61 +3206,112 @@ def list_aulas():
     conn.close()
     return render_template("aulas_horarios/aula_list.html", aulas=aulas)
 
-@app.route("/aulas/add", methods=["GET", "POST"])
+@app.route("/aulas_horarios/aulas/add", methods=["GET", "POST"])
 def add_aula():
     conn = get_db_connection()
     if conn is None:
         return redirect(url_for("list_aulas"))
-    cursor = conn.cursor()
+    cursor = conn.cursor(dictionary=True)
+
+    
+
     if request.method == "POST":
-        desc = request.form["descripcion"]
-        lugar = request.form.get("lugar") or None
-        capacidad = request.form["capacidad"]
-        try:
-            aula_crud.add_aula(cursor, desc, lugar, capacidad)
-            conn.commit()
-            flash("Aula añadida correctamente.", "success")
-        except mysql.connector.Error as err:
-            conn.rollback()
-            flash(f"Error: {err}", "danger")
-        finally:
+        form_data = {
+            "descripcion_aula": request.form.get("descripcion_aula"),
+            "lugar": request.form.get("lugar"),
+            "capacidad": request.form.get("capacidad"),
+        }
+
+        valid, error = validate_form_from_table(
+            cursor,
+            "aula",
+            request.form
+        )
+
+        if not valid:
+            flash(error, "danger")
             cursor.close()
             conn.close()
-        return redirect(url_for("list_aulas"))
+            return redirect(request.referrer)
+        else:
+            try:
+                aula_crud.add_aula(
+                    cursor,
+                    form_data["descripcion_aula"],
+                    form_data["lugar"],
+                    form_data["capacidad"],
+                )
+                conn.commit()
+                flash("Aula añadida correctamente.", "success")
+                cursor.close()
+                conn.close()
+                return redirect(url_for("list_aulas"))
+            except mysql.connector.Error as err:
+                conn.rollback()
+                flash(f"Error: {err}", "danger")
+
     cursor.close()
     conn.close()
     return render_template("aulas_horarios/aula_form.html", aula=None)
 
-@app.route("/aulas/edit/<int:idaula>", methods=["GET", "POST"])
+@app.route("/aulas_horarios/aulas/edit/<int:idaula>", methods=["GET", "POST"])
 def edit_aula(idaula):
     conn = get_db_connection()
     if conn is None:
         return redirect(url_for("list_aulas"))
     cursor = conn.cursor(dictionary=True)
-    if request.method == "POST":
-        desc = request.form["descripcion"]
-        lugar = request.form.get("lugar") or None
-        capacidad = request.form["capacidad"]
-        try:
-            aula_crud.update_aula(cursor, idaula, desc, lugar, capacidad)
-            conn.commit()
-            flash("Aula actualizada correctamente.", "success")
-        except mysql.connector.Error as err:
-            conn.rollback()
-            flash(f"Error: {err}", "danger")
-        finally:
-            cursor.close()
-            conn.close()
-        return redirect(url_for("list_aulas"))
+
     aula = aula_crud.get_aula(cursor, idaula)
-    cursor.close()
-    conn.close()
     if not aula:
+        cursor.close()
+        conn.close()
         flash("Aula no encontrada.", "warning")
         return redirect(url_for("list_aulas"))
+
+    
+
+    if request.method == "POST":
+        form_data = {
+            "descripcion_aula": request.form.get("descripcion_aula"),
+            "lugar": request.form.get("lugar"),
+            "capacidad": request.form.get("capacidad"),
+        }
+
+        valid, error = validate_form_from_table(
+            cursor,
+            "aula",
+            request.form
+        )
+
+        if not valid:
+            flash(error, "danger")
+            cursor.close()
+            conn.close()
+            return redirect(request.referrer)
+        else:
+            try:
+                aula_crud.update_aula(
+                    cursor,
+                    idaula,
+                    form_data["descripcion_aula"],
+                    form_data["lugar"],
+                    form_data["capacidad"],
+                )
+                conn.commit()
+                flash("Aula actualizada correctamente.", "success")
+                cursor.close()
+                conn.close()
+                return redirect(url_for("list_aulas"))
+            except mysql.connector.Error as err:
+                conn.rollback()
+                flash(f"Error: {err}", "danger")
+
+    cursor.close()
+    conn.close()
     return render_template("aulas_horarios/aula_form.html", aula=aula)
 
-@app.route("/aulas/delete/<int:idaula>", methods=["POST"])
+
+@app.route("/aulas_horarios/aulas/delete/<int:idaula>", methods=["POST"])
 def delete_aula(idaula):
     conn = get_db_connection()
     if conn is None:
@@ -2262,7 +3329,7 @@ def delete_aula(idaula):
         conn.close()
     return redirect(url_for("list_aulas"))
 
-@app.route("/aulas/search")
+@app.route("/aulas_horarios/aulas/search")
 def search_aulas():
     query_term = request.args.get("query", "").strip()
     if not query_term:
@@ -2280,7 +3347,7 @@ def search_aulas():
 
 # --- Rutas para Horarios ---
 
-@app.route("/horarios")
+@app.route("/aulas_horarios/horarios")
 def list_horarios():
     conn = get_db_connection()
     if conn is None:
@@ -2291,63 +3358,115 @@ def list_horarios():
     conn.close()
     return render_template("aulas_horarios/horario_list.html", horarios=horarios)
 
-@app.route("/horarios/add", methods=["GET", "POST"])
+@app.route("/aulas_horarios/horarios/add", methods=["GET", "POST"])
 def add_horario():
     conn = get_db_connection()
     if conn is None:
         return redirect(url_for("list_horarios"))
-    cursor = conn.cursor()
+    cursor = conn.cursor(dictionary=True)
+
+
     if request.method == "POST":
-        dia = request.form["dia_semana"]
-        inicio = request.form["hora_inicio"]
-        fin = request.form["hora_fin"]
-        desc = request.form.get("descripcion") or None
-        try:
-            horario_crud.add_horario(cursor, dia, inicio, fin, desc)
-            conn.commit()
-            flash("Horario añadido correctamente.", "success")
-        except mysql.connector.Error as err:
-            conn.rollback()
-            flash(f"Error: {err}", "danger")
-        finally:
+        form_data = {
+            "dia_semana": request.form.get("dia_semana"),
+            "hora_inicio": request.form.get("hora_inicio"),
+            "hora_fin": request.form.get("hora_fin"),
+            "descripcion": request.form.get("descripcion"),
+        }
+
+        valid, error = validate_form_from_table(
+            cursor,
+            "horario",
+            request.form
+        )
+
+        if not valid:
+            flash(error, "danger")
             cursor.close()
             conn.close()
-        return redirect(url_for("list_horarios"))
+            return redirect(request.referrer)
+        else:
+            try:
+                horario_crud.add_horario(
+                    cursor,
+                    form_data["dia_semana"],
+                    form_data["hora_inicio"],
+                    form_data["hora_fin"],
+                    form_data["descripcion"],
+                )
+                conn.commit()
+                flash("Horario añadido correctamente.", "success")
+                cursor.close()
+                conn.close()
+                return redirect(url_for("list_horarios"))
+            except mysql.connector.Error as err:
+                conn.rollback()
+                flash(f"Error: {err}", "danger")
+
     cursor.close()
     conn.close()
     return render_template("aulas_horarios/horario_form.html", horario=None)
 
-@app.route("/horarios/edit/<int:idhorario>", methods=["GET", "POST"])
+@app.route("/aulas_horarios/horarios/edit/<int:idhorario>", methods=["GET", "POST"])
 def edit_horario(idhorario):
     conn = get_db_connection()
     if conn is None:
         return redirect(url_for("list_horarios"))
     cursor = conn.cursor(dictionary=True)
-    if request.method == "POST":
-        dia = request.form["dia_semana"]
-        inicio = request.form["hora_inicio"]
-        fin = request.form["hora_fin"]
-        desc = request.form.get("descripcion") or None
-        try:
-            horario_crud.update_horario(cursor, idhorario, dia, inicio, fin, desc)
-            conn.commit()
-            flash("Horario actualizado correctamente.", "success")
-        except mysql.connector.Error as err:
-            conn.rollback()
-            flash(f"Error: {err}", "danger")
-        finally:
-            cursor.close()
-            conn.close()
-        return redirect(url_for("list_horarios"))
+
     horario = horario_crud.get_horario(cursor, idhorario)
-    cursor.close()
-    conn.close()
     if not horario:
+        cursor.close()
+        conn.close()
         flash("Horario no encontrado.", "warning")
         return redirect(url_for("list_horarios"))
+
+
+
+    if request.method == "POST":
+        form_data = {
+            "dia_semana": request.form.get("dia_semana"),
+            "hora_inicio": request.form.get("hora_inicio"),
+            "hora_fin": request.form.get("hora_fin"),
+            "descripcion": request.form.get("descripcion"),
+        }
+
+        valid, error = validate_form_from_table(
+            cursor,
+            "horario",
+            request.form
+        )
+
+        if not valid:
+            flash(error, "danger")
+            cursor.close()
+            conn.close()
+            return redirect(request.referrer)
+        else:
+            try:
+                horario_crud.update_horario(
+                    cursor,
+                    idhorario,
+                    form_data["dia_semana"],
+                    form_data["hora_inicio"],
+                    form_data["hora_fin"],
+                    form_data["descripcion"],
+                )
+                conn.commit()
+                flash("Horario actualizado correctamente.", "success")
+                cursor.close()
+                conn.close()
+                return redirect(url_for("list_horarios"))
+            except mysql.connector.Error as err:
+                conn.rollback()
+                flash(f"Error: {err}", "danger")
+
+    cursor.close()
+    conn.close()
     return render_template("aulas_horarios/horario_form.html", horario=horario)
 
-@app.route("/horarios/delete/<int:idhorario>", methods=["POST"])
+
+@app.route("/aulas_horarios/horarios/delete/<int:idhorario>", methods=["POST"])
 def delete_horario(idhorario):
     conn = get_db_connection()
     if conn is None:
@@ -2365,7 +3484,7 @@ def delete_horario(idhorario):
         conn.close()
     return redirect(url_for("list_horarios"))
 
-@app.route("/horarios/search")
+@app.route("/aulas_horarios/horarios/search")
 def search_horarios():
     query_term = request.args.get("query", "").strip()
     if not query_term:
@@ -2383,7 +3502,7 @@ def search_horarios():
 
 # --- Rutas para Pagos ---
 
-@app.route("/pagos")
+@app.route("/finanzas_becas/pagos")
 def list_pagos():
     conn = get_db_connection()
     if conn is None:
@@ -2394,35 +3513,56 @@ def list_pagos():
     conn.close()
     return render_template("finanzas_becas/pago_list.html", pagos=pagos)
 
-@app.route("/pagos/add", methods=["GET", "POST"])
+@app.route("/finanzas_becas/pagos/add", methods=["GET", "POST"])
 def add_pago():
     conn = get_db_connection()
     if conn is None:
         return redirect(url_for("list_pagos"))
     cursor = conn.cursor(dictionary=True)
+
+    # --- Schema generado dentro ---
+    schema = {
+        "idestadodecuenta": {"required": True, "validator": validate_int},
+        "monto": {"required": True, "validator": validate_float},
+    }
+    # ------------------------------
+
     if request.method == "POST":
-        idestado = request.form["idestadodecuenta"]
-        monto = request.form["monto"]
-        try:
-            pago_crud.registrar_pago(cursor, idestado, monto)
-            conn.commit()
-            flash("Pago registrado correctamente.", "success")
-        except mysql.connector.Error as err:
-            conn.rollback()
-            flash(f"Error: {err}", "danger")
-        finally:
-            cursor.close()
-            conn.close()
-        return redirect(url_for("list_pagos"))
+        form_data = {
+            "idestadodecuenta": request.form.get("idestadodecuenta"),
+            "monto": request.form.get("monto"),
+        }
+
+        errors = validate_form_from_table(schema, form_data)
+
+        if errors:
+            flash(errors, "danger")
+        else:
+            try:
+                pago_crud.registrar_pago(
+                    cursor,
+                    form_data["idestadodecuenta"],
+                    form_data["monto"],
+                )
+                conn.commit()
+                flash("Pago registrado correctamente.", "success")
+                cursor.close()
+                conn.close()
+                return redirect(url_for("list_pagos"))
+            except mysql.connector.Error as err:
+                conn.rollback()
+                flash(f"Error: {err}", "danger")
+
     estudiantes = pago_crud.get_estudiantes_con_saldo(cursor)
     cursor.close()
     conn.close()
     return render_template("finanzas_becas/pago_form.html", estudiantes=estudiantes)
 
 
+
 # --- Rutas para Estados de Cuenta ---
 
-@app.route("/estados")
+@app.route("/finanzas_becas/estados")
 def list_estados():
     conn = get_db_connection()
     if conn is None:
@@ -2433,59 +3573,108 @@ def list_estados():
     conn.close()
     return render_template("finanzas_becas/estadodecuenta_list.html", estados=estados)
 
-@app.route("/estados/add", methods=["GET", "POST"])
+@app.route("/finanzas_becas/estados/add", methods=["GET", "POST"])
 def add_estado():
     conn = get_db_connection()
     if conn is None:
         return redirect(url_for("list_estados"))
     cursor = conn.cursor()
+
+    
+
     if request.method == "POST":
-        saldo_inicial = request.form["saldo_inicial"]
-        limite = request.form.get("limite_credito") or None
-        try:
-            estadodecuenta_crud.add_estado(cursor, saldo_inicial, limite)
-            conn.commit()
-            flash("Estado de cuenta creado correctamente.", "success")
-        except mysql.connector.Error as err:
-            conn.rollback()
-            flash(f"Error: {err}", "danger")
-        finally:
+        form_data = {
+            "saldo_inicial": request.form.get("saldo_inicial"),
+            "limite_credito": request.form.get("limite_credito") or None,
+        }
+
+        valid, error = validate_form_from_table(
+            cursor,
+            "estadodecuenta",
+            request.form
+        )
+
+        if not valid:
+            flash(error, "danger")
             cursor.close()
             conn.close()
-        return redirect(url_for("list_estados"))
+            return redirect(request.referrer)
+        else:
+            try:
+                estadodecuenta_crud.add_estado(
+                    cursor,
+                    form_data["saldo_inicial"],
+                    form_data["limite_credito"],
+                )
+                conn.commit()
+                flash("Estado de cuenta creado correctamente.", "success")
+                cursor.close()
+                conn.close()
+                return redirect(url_for("list_estados"))
+            except mysql.connector.Error as err:
+                conn.rollback()
+                flash(f"Error: {err}", "danger")
+
     cursor.close()
     conn.close()
     return render_template("finanzas_becas/estadodecuenta_form.html", estado=None)
 
-@app.route("/estados/edit/<int:idestado>", methods=["GET", "POST"])
+
+
+@app.route("/finanzas_becas/estados/edit/<int:idestado>", methods=["GET", "POST"])
 def edit_estado(idestado):
     conn = get_db_connection()
     if conn is None:
         return redirect(url_for("list_estados"))
     cursor = conn.cursor(dictionary=True)
+
+
     if request.method == "POST":
-        saldo_actual = request.form["saldo_actual"]
-        limite = request.form.get("limite_credito") or None
-        try:
-            estadodecuenta_crud.update_estado(cursor, idestado, saldo_actual, limite)
-            conn.commit()
-            flash("Estado de cuenta actualizado correctamente.", "success")
-        except mysql.connector.Error as err:
-            conn.rollback()
-            flash(f"Error: {err}", "danger")
-        finally:
+        form_data = {
+            "saldo_actual": request.form.get("saldo_actual"),
+            "limite_credito": request.form.get("limite_credito") or None,
+        }
+
+        valid, error = validate_form_from_table(
+            cursor,
+            "estadodecuenta",
+            request.form
+        )
+
+        if not valid:
+            flash(error, "danger")
             cursor.close()
             conn.close()
-        return redirect(url_for("list_estados"))
+            return redirect(request.referrer)
+        else:
+            try:
+                estadodecuenta_crud.update_estado(
+                    cursor,
+                    idestado,
+                    form_data["saldo_actual"],
+                    form_data["limite_credito"],
+                )
+                conn.commit()
+                flash("Estado de cuenta actualizado correctamente.", "success")
+                cursor.close()
+                conn.close()
+                return redirect(url_for("list_estados"))
+            except mysql.connector.Error as err:
+                conn.rollback()
+                flash(f"Error: {err}", "danger")
+
     estado = estadodecuenta_crud.get_estado(cursor, idestado)
     cursor.close()
     conn.close()
+
     if not estado:
         flash("Estado de cuenta no encontrado.", "warning")
         return redirect(url_for("list_estados"))
+
     return render_template("finanzas_becas/estadodecuenta_form.html", estado=estado)
 
-@app.route("/estados/delete/<int:idestado>", methods=["POST"])
+
+@app.route("/finanzas_becas/estados/delete/<int:idestado>", methods=["POST"])
 def delete_estado(idestado):
     conn = get_db_connection()
     if conn is None:
@@ -2503,7 +3692,7 @@ def delete_estado(idestado):
         conn.close()
     return redirect(url_for("list_estados"))
 
-@app.route("/estados/search")
+@app.route("/finanzas_becas/estados/search")
 def search_estados():
     query_term = request.args.get("query", "").strip()
     if not query_term:
@@ -2538,24 +3727,49 @@ def add_usuario():
     if conn is None:
         return redirect(url_for("list_usuarios"))
     cursor = conn.cursor()
+
+    
+
     if request.method == "POST":
-        email = request.form["email"]
-        password = request.form["password"]
-        rol = request.form["rol"]
-        try:
-            usuarios_crud.add_usuario(cursor, email, password, rol)
-            conn.commit()
-            flash("Usuario añadido correctamente.", "success")
-        except mysql.connector.Error as err:
-            conn.rollback()
-            flash(f"Error: {err}", "danger")
-        finally:
+        form_data = {
+            "email": request.form.get("email"),
+            "password": request.form.get("password"),
+            "rol": request.form.get("rol"),
+        }
+
+        valid, error = validate_form_from_table(
+            cursor,
+            "usuarios",
+            request.form
+        )
+
+        if not valid:
+            flash(error, "danger")
             cursor.close()
             conn.close()
-        return redirect(url_for("list_usuarios"))
+            return redirect(request.referrer)
+        else:
+            try:
+                usuarios_crud.add_usuario(
+                    cursor,
+                    form_data["email"],
+                    form_data["password"],
+                    form_data["rol"],
+                )
+                conn.commit()
+                flash("Usuario añadido correctamente.", "success")
+                cursor.close()
+                conn.close()
+                return redirect(url_for("list_usuarios"))
+            except mysql.connector.Error as err:
+                conn.rollback()
+                flash(f"Error: {err}", "danger")
+
     cursor.close()
     conn.close()
     return render_template("admin/usuarios_form.html", usuario=None)
+
+
 
 @app.route("/usuarios/edit/<int:idusuario>", methods=["GET", "POST"])
 def edit_usuario(idusuario):
@@ -2563,28 +3777,55 @@ def edit_usuario(idusuario):
     if conn is None:
         return redirect(url_for("list_usuarios"))
     cursor = conn.cursor(dictionary=True)
-    if request.method == "POST":
-        email = request.form["email"]
-        rol = request.form["rol"]
-        password = request.form.get("password") or None
-        try:
-            usuarios_crud.update_usuario(cursor, idusuario, email, rol, password)
-            conn.commit()
-            flash("Usuario actualizado correctamente.", "success")
-        except mysql.connector.Error as err:
-            conn.rollback()
-            flash(f"Error: {err}", "danger")
-        finally:
-            cursor.close()
-            conn.close()
-        return redirect(url_for("list_usuarios"))
+
+
     usuario = usuarios_crud.get_usuario(cursor, idusuario)
-    cursor.close()
-    conn.close()
     if not usuario:
+        cursor.close()
+        conn.close()
         flash("Usuario no encontrado.", "warning")
         return redirect(url_for("list_usuarios"))
+
+    if request.method == "POST":
+        form_data = {
+            "email": request.form.get("email"),
+            "rol": request.form.get("rol"),
+            "password": request.form.get("password") or None,
+        }
+
+        valid, error = validate_form_from_table(
+            cursor,
+            "usuarios",
+            request.form
+        )
+
+        if not valid:
+            flash(error, "danger")
+            cursor.close()
+            conn.close()
+            return redirect(request.referrer)
+        else:
+            try:
+                usuarios_crud.update_usuario(
+                    cursor,
+                    idusuario,
+                    form_data["email"],
+                    form_data["rol"],
+                    form_data["password"],
+                )
+                conn.commit()
+                flash("Usuario actualizado correctamente.", "success")
+                cursor.close()
+                conn.close()
+                return redirect(url_for("list_usuarios"))
+            except mysql.connector.Error as err:
+                conn.rollback()
+                flash(f"Error: {err}", "danger")
+
+    cursor.close()
+    conn.close()
     return render_template("admin/usuarios_form.html", usuario=usuario)
+
 
 @app.route("/usuarios/delete/<int:idusuario>", methods=["POST"])
 def delete_usuario(idusuario):
@@ -2640,17 +3881,22 @@ def login():
         print("Usuario obtenido:", user)
 
         if user and check_password_hash(user["password"], password_form):
-            # Contraseña verificada correctamente con hash
-
+            # Guardar sesión
             session["user_id"] = user["idusuario"]
             session["user_email"] = user["email"]
             session["user_rol"] = user["rol"]
 
+            # Redirección para finanzas y becas
+            if user["rol"] == "finanzas_becas":
+                return redirect(url_for("list_tipobeca"))  # Ajusta si tu endpoint es distinto
+
             return redirect(url_for("index"))
+
         else:
             flash("Credenciales incorrectas", "danger")
 
     return render_template("login.html")
+
 
 
 
