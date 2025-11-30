@@ -26,6 +26,7 @@
                     <th>Docente</th>
                     <th>Periodo</th>
                     <th>Horario</th>
+                    <th>Aula</th>
                     <th>Modalidad</th>
                     <th>Acciones</th>
                 </tr>
@@ -37,6 +38,7 @@
                     <td>{{ c.nombre_docente }}</td>
                     <td>{{ c.descripcion_periodo }}</td>
                     <td>{{ c.dia_semana }} {{ c.hora_inicio|format_timedelta }}-{{ c.hora_fin|format_timedelta }}</td>
+                    <td>{{ c.descripcion_aula }}</td>
                     <td>{{ c.modalidad }}</td>
                     <td>
                         <a href="{{ url_for('edit_clase', idclase=c.idclaseprogramada) }}"
@@ -49,7 +51,7 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="6" class="text-center">No hay clases programadas.</td>
+                    <td colspan="7" class="text-center">No hay clases programadas.</td>
                 </tr>
                 {% endfor %}
             </tbody>

@@ -2476,6 +2476,7 @@ def add_clase():
                 form_data["iddocente"],
                 form_data["idperiodo"],
                 form_data["idcalendario"],
+                request.form.get("idaula"),
                 form_data["idioma"]
             )
             conn.commit()
@@ -2497,6 +2498,7 @@ def add_clase():
     horarios = claseprogramada_crud.get_horarios(cursor)
     periodos = claseprogramada_crud.get_periodos(cursor)
     calendarios = claseprogramada_crud.get_calendarios(cursor)
+    aulas = claseprogramada_crud.get_aulas(cursor)
 
     cursor.close()
     conn.close()
@@ -2508,7 +2510,8 @@ def add_clase():
         docentes=docentes,
         horarios=horarios,
         periodos=periodos,
-        calendarios=calendarios
+        calendarios=calendarios,
+        aulas=aulas
     )
 
 
@@ -2555,6 +2558,7 @@ def edit_clase(idclase):
                 form_data["iddocente"],
                 form_data["idperiodo"],
                 form_data["idcalendario"],
+                request.form.get("idaula"),
                 form_data["idioma"]
             )
             conn.commit()
@@ -2584,6 +2588,7 @@ def edit_clase(idclase):
     horarios = claseprogramada_crud.get_horarios(cursor)
     periodos = claseprogramada_crud.get_periodos(cursor)
     calendarios = claseprogramada_crud.get_calendarios(cursor)
+    aulas = claseprogramada_crud.get_aulas(cursor)
 
     cursor.close()
     conn.close()
@@ -2595,7 +2600,8 @@ def edit_clase(idclase):
         docentes=docentes,
         horarios=horarios,
         periodos=periodos,
-        calendarios=calendarios
+        calendarios=calendarios,
+        aulas=aulas
     )
 
 

@@ -330,10 +330,17 @@ CREATE TABLE IF NOT EXISTS claseprogramada (
   iddocente              INT NOT NULL,
   idperiodoinscripciones INT NOT NULL,
   idcalendarioescolar    INT NOT NULL,
+  idaula                 INT NOT NULL,
   idioma                 ENUM('ESP','ING','FRA') NOT NULL DEFAULT 'ESP',
+
+  CONSTRAINT uq_clase_aula_horario UNIQUE (idaula, idhorario), -- Constraint para que no haya dos clases en el mismo horario en la misma aula
 
   CONSTRAINT fk_clase_asignatura
     FOREIGN KEY (idasignatura) REFERENCES asignatura(idasignatura)
+    ON DELETE RESTRICT ON UPDATE CASCADE,
+
+  CONSTRAINT fk_clase_aula
+    FOREIGN KEY (idaula) REFERENCES aula(idaula)
     ON DELETE RESTRICT ON UPDATE CASCADE,
 
   CONSTRAINT fk_clase_horario
