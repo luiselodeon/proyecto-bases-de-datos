@@ -477,7 +477,6 @@ CREATE TABLE IF NOT EXISTS calificacion_estudiante (
 CREATE TABLE IF NOT EXISTS pago (
   idpago            INT AUTO_INCREMENT PRIMARY KEY,
   idestadodecuenta  INT NOT NULL,
-  idinscripcion     INT NOT NULL,
   fecha_pago        DATE NOT NULL,
   hora_pago         TIME NULL,
   forma_pago        ENUM('EFECTIVO','TRANSFERENCIA','TARJETA','CHEQUE') NOT NULL,
@@ -486,9 +485,6 @@ CREATE TABLE IF NOT EXISTS pago (
   referencia        VARCHAR(80) NULL,
   CONSTRAINT fk_pago_estadocuenta
     FOREIGN KEY (idestadodecuenta) REFERENCES estadodecuenta(idestadodecuenta)
-    ON DELETE RESTRICT ON UPDATE CASCADE,
-  CONSTRAINT fk_pago_inscripcion
-    FOREIGN KEY (idinscripcion) REFERENCES inscripcion(idinscripcion)
     ON DELETE RESTRICT ON UPDATE CASCADE,
 CONSTRAINT chk_pago_importe CHECK (importe_pago > 0)
 ) ENGINE=InnoDB;

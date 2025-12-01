@@ -53,9 +53,16 @@ def add_student(cursor, nombre, apellido_paterno, apellido_materno, correo, idca
     sql_persona = "INSERT INTO persona (idpersona, nombre, apellido_paterno, apellido_materno, correo) VALUES (%s, %s, %s, %s, %s)"
     cursor.execute(sql_persona, (next_id_persona, nombre, apellido_paterno, apellido_materno, correo))
 
-    # 4. Insertar en `estadodecuenta` (con valores por defecto)
-    sql_estado_cuenta = "INSERT INTO estadodecuenta (idestadodecuenta, saldo_inicial, saldo_actual) VALUES (%s, 0.0, 0.0)"
-    cursor.execute(sql_estado_cuenta, (next_id_estado_cuenta,))
+    # 4. Obtener el costo de inscripción de la carrera
+    cursor.execute("SELECT costo_inscripcion FROM carrera WHERE idcarrera = %s", (idcarrera,))
+    carrera_result = cursor.fetchone()
+    if not carrera_result:
+        raise ValueError(f"Carrera con ID {idcarrera} no encontrada")
+    costo_inscripcion = carrera_result['costo_inscripcion']
+    
+    # 5. Insertar en `estadodecuenta` (con saldo inicial = costo de inscripción de la carrera)
+    sql_estado_cuenta = "INSERT INTO estadodecuenta (idestadodecuenta, saldo_inicial, saldo_actual) VALUES (%s, %s, %s)"
+    cursor.execute(sql_estado_cuenta, (next_id_estado_cuenta, costo_inscripcion, costo_inscripcion))
 
     # 5. Insertar en `estudiante`
     fecha_hoy = date.today()

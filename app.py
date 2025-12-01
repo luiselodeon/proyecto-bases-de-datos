@@ -2840,31 +2840,6 @@ def add_prerequisito():
 
         if not valid:
             flash(error, "danger")
-            cursor.close()
-            conn.close()
-            return redirect(request.referrer)
-
-        try:
-            prerequisito_crud.add_prerequisito(
-                cursor,
-                request.form["idasignatura"],
-                request.form["idasignatura_prereq"]
-            )
-            conn.commit()
-            flash("Prerequisito añadido correctamente.", "success")
-        except mysql.connector.Error as err:
-            conn.rollback()
-            flash(f"Error al añadir prerequisito: {err}", "danger")
-        finally:
-            cursor.close()
-            conn.close()
-
-        return redirect(url_for("list_prerequisitos"))
-
-    asignaturas = prerequisito_crud.get_asignaturas(cursor)
-
-    cursor.close()
-    conn.close()
 
     return render_template("cursos/prerequisito_form.html", asignaturas=asignaturas)
 
@@ -3565,43 +3540,99 @@ def add_pago():
         return redirect(url_for("list_pagos"))
     cursor = conn.cursor(dictionary=True)
 
-    # --- Schema generado dentro ---
-    schema = {
-        "idestadodecuenta": {"required": True, "validator": validate_int},
-        "monto": {"required": True, "validator": validate_float},
-    }
-    # ------------------------------
-
     if request.method == "POST":
-        form_data = {
-            "idestadodecuenta": request.form.get("idestadodecuenta"),
-            "monto": request.form.get("monto"),
-        }
+        try:
+            pago_crud.add_pago(
+                cursor,
+                request.form["idestadodecuenta"],
+                request.form["forma_pago"],
+                request.form["tipo_movimiento"],
+                request.form["monto"],
+                request.form.get("referencia")
+            )
+            conn.commit()
+            flash("Pago registrado correctamente.", "success")
+        except mysql.connector.Error as err:
+            conn.rollback()
+            flash(f"Error al registrar pago: {err}", "danger")
+        finally:
+            cursor.close()
+            conn.close()
 
-        errors = validate_form_from_table(schema, form_data)
+        return redirect(url_for("list_pagos"))
 
-        if errors:
-            flash(errors, "danger")
-        else:
-            try:
-                pago_crud.registrar_pago(
-                    cursor,
-                    form_data["idestadodecuenta"],
-                    form_data["monto"],
-                )
-                conn.commit()
-                flash("Pago registrado correctamente.", "success")
-                cursor.close()
-                conn.close()
-                return redirect(url_for("list_pagos"))
-            except mysql.connector.Error as err:
-                conn.rollback()
-                flash(f"Error: {err}", "danger")
-
-    estudiantes = pago_crud.get_estudiantes_con_saldo(cursor)
+    estudiantes = pago_crud.get_estudiantes_para_pago(cursor)
     cursor.close()
     conn.close()
-    return render_template("finanzas_becas/pago_form.html", estudiantes=estudiantes)
+    return render_template("finanzas_becas/pago_form.html", estudiantes=estudiantes, pago=None)
+
+@app.route("/finanzas_becas/pagos/edit/<int:idpago>", methods=["GET", "POST"])
+def edit_pago(idpago):
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_pagos"))
+    cursor = conn.cursor(dictionary=True)
+
+    if request.method == "POST":
+        # Recoger datos
+        forma_pago = request.form.get("forma_pago")
+        tipo_movimiento = request.form.get("tipo_movimiento")
+        importe_pago = request.form.get("monto")
+        referencia = request.form.get("referencia")
+
+        try:
+            if pago_crud.update_pago(
+                cursor,
+                idpago,
+                forma_pago,
+                tipo_movimiento,
+                importe_pago,
+                referencia
+            ):
+                conn.commit()
+                flash("Pago actualizado correctamente.", "success")
+            else:
+                flash("Error al actualizar pago.", "danger")
+        except mysql.connector.Error as err:
+            conn.rollback()
+            flash(f"Error: {err}", "danger")
+        finally:
+            cursor.close()
+            conn.close()
+        return redirect(url_for("list_pagos"))
+
+    # GET
+    pago = pago_crud.get_pago(cursor, idpago)
+    if not pago:
+        flash("Pago no encontrado.", "warning")
+        cursor.close()
+        conn.close()
+        return redirect(url_for("list_pagos"))
+
+    estudiantes = pago_crud.get_estudiantes_para_pago(cursor)
+    cursor.close()
+    conn.close()
+    return render_template("finanzas_becas/pago_form.html", pago=pago, estudiantes=estudiantes)
+
+@app.route("/finanzas_becas/pagos/delete/<int:idpago>", methods=["POST"])
+def delete_pago(idpago):
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_pagos"))
+    cursor = conn.cursor(dictionary=True)
+    try:
+        if pago_crud.delete_pago(cursor, idpago):
+            conn.commit()
+            flash("Pago eliminado y saldo revertido correctamente.", "success")
+        else:
+            flash("Error al eliminar pago.", "danger")
+    except mysql.connector.Error as err:
+        conn.rollback()
+        flash(f"Error: {err}", "danger")
+    finally:
+        cursor.close()
+        conn.close()
+    return redirect(url_for("list_pagos"))
 
 
 
