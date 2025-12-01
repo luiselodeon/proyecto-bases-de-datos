@@ -20,7 +20,7 @@ from utils.db import get_db_connection
 from utils.estudiantes import students_crud, historialacademico_crud, inscripcion_crud
 from utils.cursos import carreras_crud, asignaturas_crud, periodoinscripciones_crud, prerequisito_crud, planestudio_crud, calendarioescolar_crud
 from utils.aulas_horarios import departamentos_crud, departamentoasignatura_crud, aula_crud, horario_crud
-from utils.docentes import docente_crud, claseprogramada_crud, capacitacion_crud
+from utils.docentes import docente_crud, claseprogramada_crud, capacitacion_crud, docente_capacitacion_crud
 from utils.calificaciones import calificacion_estudiante_crud, evaluacion_crud
 from utils.finanzas_becas import becas_crud, tipobeca_crud, pago_crud, estadodecuenta_crud
 from utils.asistencia import asistencia_crud
@@ -2803,6 +2803,87 @@ def search_capacitaciones():
     conn.close()
     flash(f'Resultados para "{query_term}".', "info")
     return render_template("docentes/capacitacion_list.html", capacitaciones=capacitaciones)
+
+
+# --- Rutas para Asignación de Capacitación a Docentes ---
+
+@app.route("/gestion_docentes/capacitacion_docente")
+def list_docente_capacitaciones():
+    conn = get_db_connection()
+    if conn is None:
+        return render_template("docentes/docente_capacitacion_list.html", docente_capacitaciones=[])
+    cursor = conn.cursor(dictionary=True)
+    docente_capacitaciones = docente_capacitacion_crud.list_docente_capacitaciones(cursor)
+    cursor.close()
+    conn.close()
+    return render_template("docentes/docente_capacitacion_list.html", docente_capacitaciones=docente_capacitaciones)
+
+@app.route("/gestion_docentes/capacitacion_docente/add", methods=["GET", "POST"])
+def add_docente_capacitacion():
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_docente_capacitaciones"))
+    
+    cursor = conn.cursor(dictionary=True)
+    
+    if request.method == "POST":
+        try:
+            docente_capacitacion_crud.add_docente_capacitacion(
+                cursor,
+                request.form["iddocente"],
+                request.form["idcapacitacion"]
+            )
+            conn.commit()
+            flash("Docente asignado a capacitación correctamente.", "success")
+        except mysql.connector.Error as err:
+            conn.rollback()
+            flash(f"Error al asignar: {err}", "danger")
+        finally:
+            cursor.close()
+            conn.close()
+        
+        return redirect(url_for("list_docente_capacitaciones"))
+    
+    # GET: Load dropdowns
+    docentes = docente_capacitacion_crud.get_docentes(cursor)
+    capacitaciones = docente_capacitacion_crud.get_capacitaciones(cursor)
+    cursor.close()
+    conn.close()
+    
+    return render_template("docentes/docente_capacitacion_form.html", docentes=docentes, capacitaciones=capacitaciones)
+
+@app.route("/gestion_docentes/capacitacion_docente/delete/<int:iddocente>/<int:idcapacitacion>", methods=["POST"])
+def delete_docente_capacitacion(iddocente, idcapacitacion):
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_docente_capacitaciones"))
+    cursor = conn.cursor()
+    try:
+        docente_capacitacion_crud.delete_docente_capacitacion(cursor, iddocente, idcapacitacion)
+        conn.commit()
+        flash("Asignación eliminada correctamente.", "success")
+    except mysql.connector.Error as err:
+        conn.rollback()
+        flash(f"Error: {err}", "danger")
+    finally:
+        cursor.close()
+        conn.close()
+    return redirect(url_for("list_docente_capacitaciones"))
+
+@app.route("/gestion_docentes/capacitacion_docente/search")
+def search_docente_capacitaciones():
+    query_term = request.args.get("query", "").strip()
+    if not query_term:
+        return redirect(url_for("list_docente_capacitaciones"))
+    conn = get_db_connection()
+    if conn is None:
+        return redirect(url_for("list_docente_capacitaciones"))
+    cursor = conn.cursor(dictionary=True)
+    docente_capacitaciones = docente_capacitacion_crud.search_docente_capacitaciones(cursor, query_term)
+    cursor.close()
+    conn.close()
+    flash(f'Resultados para "{query_term}".', "info")
+    return render_template("docentes/docente_capacitacion_list.html", docente_capacitaciones=docente_capacitaciones)
 
 
 # --- Rutas para Prerequisitos ---

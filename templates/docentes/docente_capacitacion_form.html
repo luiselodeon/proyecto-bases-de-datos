@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}Asignar Docente a Capacitación{% endblock %}
+{% block content %}
+
+<h1>Asignar Docente a Capacitación</h1>
+<hr>
+
+<form method="post">
+    <div class="mb-3">
+        <label for="iddocente" class="form-label">Docente</label>
+        <select class="form-select" id="iddocente" name="iddocente" required>
+            <option value="">Seleccione un docente...</option>
+            {% for docente in docentes %}
+            <option value="{{ docente.iddocente }}">{{ docente.nombre_completo }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label for="idcapacitacion" class="form-label">Capacitación</label>
+        <select class="form-select" id="idcapacitacion" name="idcapacitacion" required>
+            <option value="">Seleccione una capacitación...</option>
+            {% for capacitacion in capacitaciones %}
+            <option value="{{ capacitacion.idcapacitacion }}">
+                {{ capacitacion.descripcion }}
+                ({{ capacitacion.fecha_inicio }}
+                {% if capacitacion.institucion %} - {{ capacitacion.institucion }}{% endif %})
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Asignar</button>
+    <a href="{{ url_for('list_docente_capacitaciones') }}" class="btn btn-secondary">Cancelar</a>
+</form>
+
+{% endblock %}

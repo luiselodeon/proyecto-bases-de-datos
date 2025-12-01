@@ -46,25 +46,13 @@ def add_pago(cursor, idestadodecuenta, forma_pago, tipo_movimiento, importe_pago
     
     # 2. Update estadodecuenta (Subtract amount from balance)
     # Use GREATEST to ensure saldo_actual never goes below 0 (constraint requirement)
-    
-    # DEBUG: Check current balance
-    cursor.execute("SELECT saldo_inicial, saldo_actual FROM estadodecuenta WHERE idestadodecuenta = %s", (idestadodecuenta,))
-    before = cursor.fetchone()
-    print(f"[DEBUG add_pago] BEFORE UPDATE - ID: {idestadodecuenta}, saldo_inicial: {before}, saldo_actual: {before}")
-    print(f"[DEBUG add_pago] Payment amount: {importe_pago}")
-    
     query_update = """
     UPDATE estadodecuenta
     SET saldo_actual = GREATEST(0, saldo_actual - %s)
     WHERE idestadodecuenta = %s
     """
     cursor.execute(query_update, (importe_pago, idestadodecuenta))
-    print(f"[DEBUG add_pago] UPDATE executed, rows affected: {cursor.rowcount}")
-    
-    # DEBUG: Check balance after update
-    cursor.execute("SELECT saldo_inicial, saldo_actual FROM estadodecuenta WHERE idestadodecuenta = %s", (idestadodecuenta,))
-    after = cursor.fetchone()
-    print(f"[DEBUG add_pago] AFTER UPDATE - ID: {idestadodecuenta}, saldo_inicial: {after}, saldo_actual: {after}")
+
 
 
 

@@ -167,7 +167,7 @@ CREATE TABLE IF NOT EXISTS capacitacion (
   descripcion     VARCHAR(100) NOT NULL,
   fecha_inicio    DATE NOT NULL,
   fecha_fin       DATE NULL,
-  horas_capacitacion DECIMAL(4,2) NULL,
+  horas_capacitacion DECIMAL(5,2) NULL,
   institucion     VARCHAR(80) NULL
 ) ENGINE=InnoDB;
 
