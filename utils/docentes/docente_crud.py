@@ -17,7 +17,7 @@ def list_docentes(cursor):
         p.telefono
     FROM docente d
     JOIN persona p ON d.idpersona = p.idpersona
-    ORDER BY p.apellido_paterno, p.apellido_materno, p.nombre
+    ORDER BY d.iddocente ASC
     """
     cursor.execute(query)
     return cursor.fetchall()
@@ -112,7 +112,7 @@ def search_docentes(cursor, query_term):
        OR p.apellido_paterno LIKE %s 
        OR p.apellido_materno LIKE %s
        OR p.correo LIKE %s
-    ORDER BY p.apellido_paterno, p.nombre
+    ORDER BY d.iddocente ASC
     """
     term = f"%{query_term}%"
     cursor.execute(query, (term, term, term, term))

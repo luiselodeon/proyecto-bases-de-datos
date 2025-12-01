@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}Reportes y Estadísticas{% endblock %}
+{% block content %}
+
+<div class="container mt-4">
+    <h1 class="mb-4">Reportes y Estadísticas</h1>
+
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+        <!-- Reporte de Mejores Alumnos -->
+        <div class="col">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <h5 class="card-title"><i class="fas fa-user-graduate fa-2x mb-3 text-primary"></i><br>Mejores
+                        Alumnos</h5>
+                    <p class="card-text">Listado de alumnos con los promedios generales más altos.</p>
+                    <a href="{{ url_for('download_report', report_type='top_students') }}"
+                        class="btn btn-outline-primary">
+                        <i class="fas fa-download"></i> Descargar CSV
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reporte de Materias Populares -->
+        <div class="col">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <h5 class="card-title"><i class="fas fa-book-open fa-2x mb-3 text-success"></i><br>Materias
+                        Populares</h5>
+                    <p class="card-text">Asignaturas con mayor número de inscripciones registradas.</p>
+                    <a href="{{ url_for('download_report', report_type='popular_subjects') }}"
+                        class="btn btn-outline-success">
+                        <i class="fas fa-download"></i> Descargar CSV
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reporte de Horarios Concurridos -->
+        <div class="col">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <h5 class="card-title"><i class="fas fa-clock fa-2x mb-3 text-warning"></i><br>Horarios Concurridos
+                    </h5>
+                    <p class="card-text">Horarios con mayor densidad de clases programadas.</p>
+                    <a href="{{ url_for('download_report', report_type='busy_schedules') }}"
+                        class="btn btn-outline-warning">
+                        <i class="fas fa-download"></i> Descargar CSV
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

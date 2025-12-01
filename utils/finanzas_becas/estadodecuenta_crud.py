@@ -10,7 +10,7 @@ def list_estados(cursor):
     FROM estadodecuenta ec
     LEFT JOIN estudiante e ON e.idestadodecuenta = ec.idestadodecuenta
     LEFT JOIN persona p ON e.idpersona = p.idpersona
-    ORDER BY ec.idestadodecuenta DESC
+    ORDER BY ec.idestadodecuenta ASC
     """
     cursor.execute(query)
     return cursor.fetchall()
@@ -55,7 +55,7 @@ def search_estados(cursor, query_term):
     LEFT JOIN estudiante e ON e.idestadodecuenta = ec.idestadodecuenta
     LEFT JOIN persona p ON e.idpersona = p.idpersona
     WHERE p.nombre LIKE %s OR p.apellido_paterno LIKE %s OR e.matricula_alumno LIKE %s
-    ORDER BY ec.idestadodecuenta DESC
+    ORDER BY ec.idestadodecuenta ASC
     """
     term = f"%{query_term}%"
     cursor.execute(query, (term, term, term))

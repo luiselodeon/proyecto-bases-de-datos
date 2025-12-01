@@ -7,7 +7,7 @@ def list_planestudios(cursor):
            c.descripcion_carrera, p.idcarrera
     FROM planestudio p
     JOIN carrera c ON p.idcarrera = c.idcarrera
-    ORDER BY c.descripcion_carrera, p.vigencia_inicio DESC
+    ORDER BY p.idplanestudio ASC
     """
     cursor.execute(query)
     return cursor.fetchall()
@@ -52,7 +52,7 @@ def search_planestudio(cursor, query_term):
     FROM planestudio p
     JOIN carrera c ON p.idcarrera = c.idcarrera
     WHERE p.nombre_plan LIKE %s OR c.descripcion_carrera LIKE %s
-    ORDER BY c.descripcion_carrera, p.vigencia_inicio DESC
+    ORDER BY p.idplanestudio ASC
     """
     cursor.execute(query, (pattern, pattern))
     return cursor.fetchall()

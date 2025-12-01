@@ -20,7 +20,7 @@ def list_asistencias(cursor):
     LEFT JOIN persona p ON e.idpersona = p.idpersona
     LEFT JOIN docente d ON asi.iddocente = d.iddocente
     LEFT JOIN persona pd ON d.idpersona = pd.idpersona
-    ORDER BY asi.fecha DESC
+    ORDER BY asi.idasistencia ASC
     """
     cursor.execute(query)
     return cursor.fetchall()
@@ -123,7 +123,7 @@ def search_asistencias(cursor, query_term):
     LEFT JOIN docente d ON asi.iddocente = d.iddocente
     LEFT JOIN persona pd ON d.idpersona = pd.idpersona
     WHERE a.nombre_asignatura LIKE %s OR p.nombre LIKE %s OR pd.nombre LIKE %s
-    ORDER BY asi.fecha DESC
+    ORDER BY asi.idasistencia ASC
     """
     term = f"%{query_term}%"
     cursor.execute(query, (term, term, term))

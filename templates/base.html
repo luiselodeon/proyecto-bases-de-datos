@@ -48,91 +48,92 @@
               <li><a class="dropdown-item" href="{{ url_for('list_docentes') }}">Administración Personal</a></li>
               <li><a class="dropdown-item" href="{{ url_for('list_clases') }}">Asignación a Cursos</a></li>
               <li><a class="dropdown-item" href="{{ url_for('list_capacitaciones') }}">Capacitación y Evaluaciones</a>
-              <li><a class="dropdown-item" href="{{ url_for('list_docente_capacitaciones') }}">Asignación Capacitación</a></li>
-              </li>
-            </ul>
+              <li><a class="dropdown-item" href="{{ url_for('list_docente_capacitaciones') }}">Asignación
+                  Capacitación</a></li>
           </li>
+        </ul>
+        </li>
 
-          <!-- Cursos y Planes de Estudio -->
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-              Cursos y Planes
-            </a>
-            <ul class="dropdown-menu">
-              <li><a class="dropdown-item" href="{{ url_for('list_carreras') }}">Carreras</a></li>
-              <li><a class="dropdown-item" href="{{ url_for('list_asignaturas') }}">Asignaturas</a></li>
-              <li><a class="dropdown-item" href="{{ url_for('list_periodos') }}">Periodos de Inscripción</a></li>
-              <li><a class="dropdown-item" href="{{ url_for('list_prerequisitos') }}">Requisitos Programa</a></li>
-              <li><a class="dropdown-item" href="{{ url_for('list_planestudios') }}">Planes de Estudio</a></li>
-              <li><a class="dropdown-item" href="{{ url_for('list_calendarios') }}">Calendario Escolar</a></li>
-            </ul>
-          </li>
+        <!-- Cursos y Planes de Estudio -->
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+            Cursos y Planes
+          </a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="{{ url_for('list_carreras') }}">Carreras</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('list_asignaturas') }}">Asignaturas</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('list_periodos') }}">Periodos de Inscripción</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('list_prerequisitos') }}">Requisitos Programa</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('list_planestudios') }}">Planes de Estudio</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('list_calendarios') }}">Calendario Escolar</a></li>
+          </ul>
+        </li>
 
-          <!-- Calificaciones -->
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-              Calificaciones
+        <!-- Calificaciones -->
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+            Calificaciones
           </a>
           <ul class="dropdown-menu">
             <li><a class="dropdown-item" href="{{ url_for('list_evaluaciones') }}">Registro de Notas</a></li>
             <li><a class="dropdown-item" href="{{ url_for('list_calificacion_estudiante') }}">Calificación
-                Estudiante</a></li>            
-            </li>
+                Estudiante</a></li>
+        </li>
+        </ul>
+        </li>
+
+        <!-- Asistencia -->
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+            Asistencia
+          </a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="{{ url_for('list_asistencias') }}">Registro Asistencia</a></li>
           </ul>
-          </li>
+        </li>
 
-          <!-- Asistencia -->
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-              Asistencia
-            </a>
-            <ul class="dropdown-menu">
-              <li><a class="dropdown-item" href="{{ url_for('list_asistencias') }}">Registro Asistencia</a></li>              
-            </ul>
-          </li>
+        <!-- Aulas y Horarios -->
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+            Aulas y Horarios
+          </a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="{{ url_for('list_departamentos') }}">Departamentos Académicos</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('list_departamentos_asignatura') }}">Departamentos de
+                Asignatura</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('list_aulas') }}">Asignación de Aulas</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('list_horarios') }}">Gestión de Horarios</a></li>
+          </ul>
+        </li>
+        {% endif %}
 
-          <!-- Aulas y Horarios -->
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-              Aulas y Horarios
-            </a>
-            <ul class="dropdown-menu">
-              <li><a class="dropdown-item" href="{{ url_for('list_departamentos') }}">Departamentos Académicos</a></li>
-              <li><a class="dropdown-item" href="{{ url_for('list_departamentos_asignatura') }}">Departamentos de
-                  Asignatura</a></li>
-              <li><a class="dropdown-item" href="{{ url_for('list_aulas') }}">Asignación de Aulas</a></li>
-              <li><a class="dropdown-item" href="{{ url_for('list_horarios') }}">Gestión de Horarios</a></li>              
-            </ul>
-          </li>
-          {% endif %}
+        {% if session.get('user_rol') in ['finanzas_becas', 'admin'] %}
+        <!-- Finanzas y Becas -->
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+            Finanzas y Becas
+          </a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="{{ url_for('list_becas') }}">Becas</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('list_tipobeca') }}">Tipos de Beca</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('list_pagos') }}">Administración de Pagos</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('list_estados') }}">Estados de Cuenta</a></li>
+          </ul>
+        </li>
+        {% endif %}
 
-          {% if session.get('user_rol') in ['finanzas_becas', 'admin'] %}
-          <!-- Finanzas y Becas -->
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-              Finanzas y Becas
-            </a>
-            <ul class="dropdown-menu">
-              <li><a class="dropdown-item" href="{{ url_for('list_becas') }}">Becas</a></li>
-              <li><a class="dropdown-item" href="{{ url_for('list_tipobeca') }}">Tipos de Beca</a></li>
-              <li><a class="dropdown-item" href="{{ url_for('list_pagos') }}">Administración de Pagos</a></li>
-              <li><a class="dropdown-item" href="{{ url_for('list_estados') }}">Estados de Cuenta</a></li>
-            </ul>
-          </li>
-          {% endif %}
-
-          {% if session.get('user_rol') == 'admin' %}
-          <!-- Dropdown "Más" -->
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-              Más
-            </a>
-            <ul class="dropdown-menu">
-              <li><a class="dropdown-item" href="{{ url_for('placeholder', section='reportes_estadisticas') }}">Reportes</a></li>
-              <li><a class="dropdown-item" href="{{ url_for('list_usuarios') }}">Usuarios</a></li>
-            </ul>
-          </li>
-          {% endif %}
+        {% if session.get('user_rol') == 'admin' %}
+        <!-- Dropdown "Más" -->
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+            Más
+          </a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="{{ url_for('list_usuarios') }}">Usuarios</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('reportes') }}">Reportes</a></li>
+          </ul>
+        </li>
+        {% endif %}
 
 
         </ul>

@@ -4023,6 +4023,13 @@ if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=True)
 
 
+# ruta de logout
+@app.route("/logout")
+def logout():
+    session.clear()
+    flash("Has cerrado sesión.", "info")
+    return redirect(url_for("login"))
+
 # ruta de login
 @app.route("/", methods=["GET", "POST"])
 def login():
@@ -4056,16 +4063,7 @@ def login():
 
 
 
-
-# ruta de logout
-@app.route("/logout")
-def logout():
-    session.clear()
-    flash("Sesión cerrada.", "success")
-    return redirect(url_for("login"))
-
-#ruta del registro
-
+# ruta del registro
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
@@ -4110,4 +4108,72 @@ def register():
         return redirect(url_for("login"))
 
     return render_template("register.html")
+
+
+# --- Rutas para Reportes ---
+import csv
+import io
+from flask import make_response
+from utils.reportes_estadísticas import reportes_crud
+
+@app.route("/mas/reportes")
+def reportes():
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+    return render_template("reportes/reportes.html")
+
+@app.route("/mas/reportes/download/<report_type>")
+def download_report(report_type):
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+        
+    conn = get_db_connection()
+    if conn is None:
+        flash("Error de conexión a la base de datos", "danger")
+        return redirect(url_for("reportes"))
+        
+    cursor = conn.cursor(dictionary=True)
+    
+    try:
+        if report_type == 'top_students':
+            data = reportes_crud.get_top_students(cursor)
+            filename = "mejores_alumnos.csv"
+            headers = ['Matrícula', 'Nombre Completo', 'Carrera', 'Promedio General']
+            keys = ['matricula_alumno', 'nombre_completo', 'descripcion_carrera', 'promedio_general']
+            
+        elif report_type == 'popular_subjects':
+            data = reportes_crud.get_popular_subjects(cursor)
+            filename = "materias_populares.csv"
+            headers = ['ID Asignatura', 'Nombre Asignatura', 'Total Inscritos']
+            keys = ['idasignatura', 'nombre_asignatura', 'total_inscritos']
+            
+        elif report_type == 'busy_schedules':
+            data = reportes_crud.get_busy_schedules(cursor)
+            filename = "horarios_concurridos.csv"
+            headers = ['ID Horario', 'Día', 'Inicio', 'Fin', 'Total Clases']
+            keys = ['idhorario', 'dia_semana', 'hora_inicio', 'hora_fin', 'total_clases']
+            
+        else:
+            flash("Tipo de reporte no válido", "warning")
+            return redirect(url_for("reportes"))
+            
+        # Generate CSV
+        si = io.StringIO()
+        cw = csv.writer(si)
+        cw.writerow(headers)
+        
+        for row in data:
+            cw.writerow([row[k] for k in keys])
+            
+        output = make_response(si.getvalue())
+        output.headers["Content-Disposition"] = f"attachment; filename={filename}"
+        output.headers["Content-type"] = "text/csv"
+        return output
+        
+    except Exception as e:
+        flash(f"Error generando reporte: {e}", "danger")
+        return redirect(url_for("reportes"))
+    finally:
+        cursor.close()
+        conn.close()
 

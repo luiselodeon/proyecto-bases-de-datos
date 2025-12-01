@@ -25,7 +25,7 @@ def list_students(cursor):
     LEFT JOIN carrera c ON e.idcarrera = c.idcarrera
     LEFT JOIN beca b ON e.idbeca = b.idbeca
     LEFT JOIN tipo_beca tb ON b.idtipo_beca = tb.idtipo_beca
-    ORDER BY p.apellido_paterno, p.apellido_materno, p.nombre;
+    ORDER BY e.matricula_alumno ASC;
     """
     cursor.execute(query)
     return cursor.fetchall()
@@ -137,7 +137,7 @@ def search_student(cursor, query_term):
        OR e.matricula_alumno LIKE %s
        OR tb.nombre_tipo LIKE %s
        OR CAST(b.porcentaje_beca AS CHAR) LIKE %s
-    ORDER BY p.apellido_paterno, p.apellido_materno, p.nombre;
+    ORDER BY e.matricula_alumno ASC;
     """
     cursor.execute(query, (search_pattern, search_pattern, search_pattern, search_pattern, search_pattern, search_pattern, search_pattern))
     return cursor.fetchall()
