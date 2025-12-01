@@ -9,35 +9,24 @@
 <form method="post">
 
     {# ID solo cuando es nueva #}
-    {% if not asignatura %}
-    <div class="mb-3">
-        <label for="idasignatura" class="form-label">ID de la Asignatura</label>
-        <input type="number" class="form-control" id="idasignatura"
-               name="idasignatura" required>
-    </div>
-    {% endif %}
+    {# ID is auto-generated #}
 
     <div class="mb-3">
         <label for="nombre_asignatura" class="form-label">Nombre de la Asignatura</label>
-        <input type="text" class="form-control" id="nombre_asignatura"
-               name="nombre_asignatura"
-               value="{{ asignatura.nombre_asignatura if asignatura else '' }}"
-               required>
+        <input type="text" class="form-control" id="nombre_asignatura" name="nombre_asignatura"
+            value="{{ asignatura.nombre_asignatura if asignatura else '' }}" required>
     </div>
 
     <div class="mb-3">
         <label for="creditos_asignatura" class="form-label">Créditos</label>
-        <input type="number" class="form-control" id="creditos_asignatura"
-               name="creditos_asignatura"
-               value="{{ asignatura.creditos_asignatura if asignatura else '' }}"
-               required>
+        <input type="number" class="form-control" id="creditos_asignatura" name="creditos_asignatura"
+            value="{{ asignatura.creditos_asignatura if asignatura else '' }}" required>
     </div>
 
     <div class="mb-3">
         <label for="horas_por_sesion" class="form-label">Horas por sesión</label>
-        <input type="number" step="0.25" class="form-control" id="horas_por_sesion"
-               name="horas_por_sesion"
-               value="{{ asignatura.horas_por_sesion if asignatura else '' }}">
+        <input type="number" step="0.25" class="form-control" id="horas_por_sesion" name="horas_por_sesion"
+            value="{{ asignatura.horas_por_sesion if asignatura else '' }}">
     </div>
 
     <div class="mb-3">
@@ -45,8 +34,8 @@
         <select class="form-select" id="iddeptoasignatura" name="iddeptoasignatura">
             <option value="">Sin departamento</option>
             {% for d in departamentos %}
-            <option value="{{ d.iddeptoasignatura }}"
-                {% if asignatura and asignatura.iddeptoasignatura == d.iddeptoasignatura %}selected{% endif %}>
+            <option value="{{ d.iddeptoasignatura }}" {% if asignatura and
+                asignatura.iddeptoasignatura==d.iddeptoasignatura %}selected{% endif %}>
                 {{ d.iddeptoasignatura }} - {{ d.nombre_deptoasignatura }}
             </option>
             {% endfor %}
@@ -56,8 +45,7 @@
     {% if asignatura and asignatura.clave_asignatura %}
     <div class="mb-3">
         <label class="form-label">Clave generada</label>
-        <input type="text" class="form-control"
-               value="{{ asignatura.clave_asignatura }}" disabled>
+        <input type="text" class="form-control" value="{{ asignatura.clave_asignatura }}" disabled>
         <div class="form-text">
             La clave se genera automáticamente a partir del departamento y el ID de la asignatura.
         </div>
@@ -70,4 +58,3 @@
     <a href="{{ url_for('list_asignaturas') }}" class="btn btn-secondary">Cancelar</a>
 </form>
 {% endblock %}
-

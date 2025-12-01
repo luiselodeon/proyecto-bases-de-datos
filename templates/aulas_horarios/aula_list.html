@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block title %}Aulas{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Asignación de Aulas</h1>
+    <a href="{{ url_for('add_aula') }}" class="btn btn-primary">Añadir Aula</a>
+</div>
+
+<!-- Search Form -->
+<form action="{{ url_for('search_aulas') }}" method="get" class="mb-4">
+    <div class="input-group">
+        <input type="text" name="query" class="form-control" placeholder="Buscar por descripción o capacidad...">
+        <button type="submit" class="btn btn-outline-secondary">Buscar</button>
+    </div>
+</form>
+
+<!-- Tabla de Aulas -->
+<div class="card">
+    <div class="card-header">Lista de Aulas</div>
+    <div class="card-body">
+        <table class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th>Descripción</th>
+                    <th>Lugar Físico</th>
+                    <th>Capacidad</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in aulas %}
+                <tr>
+                    <td>{{ a.descripcion_aula }}</td>
+                    <td>{{ a.lugar_fisico or 'N/A' }}</td>
+                    <td>{{ a.capacidad }}</td>
+                    <td>
+                        <a href="{{ url_for('edit_aula', idaula=a.idaula) }}" class="btn btn-sm btn-warning">Editar</a>
+                        <form action="{{ url_for('delete_aula', idaula=a.idaula) }}" method="post"
+                            style="display:inline;" onsubmit="return confirm('¿Eliminar?');">
+                            <button type="submit" class="btn btn-sm btn-danger">Eliminar</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" class="text-center">No hay aulas.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ 'Editar' if calificacion else 'Añadir' }} Calificación{% endblock %}
+
+{% block content %}
+<h2>{{ 'Editar' if calificacion else 'Añadir' }} Calificación</h2>
+
+<form method="POST">
+    <div class="mb-3">
+        <label for="idevaluacion" class="form-label">Evaluación (Actividad)</label>
+        <select class="form-select" id="idevaluacion" name="idevaluacion" required {{ 'disabled' if calificacion else ''
+            }}>
+            <option value="">Seleccione una evaluación</option>
+            {% for eval in evaluaciones %}
+            <option value="{{ eval.idevaluacion }}" {% if calificacion and calificacion.idevaluacion==eval.idevaluacion
+                %}selected{% endif %}>
+                {{ eval.descripcion }}
+            </option>
+            {% endfor %}
+        </select>
+        {% if calificacion %}
+        <input type="hidden" name="idevaluacion" value="{{ calificacion.idevaluacion }}">
+        {% endif %}
+    </div>
+
+    <div class="mb-3">
+        <label for="idinscripcion" class="form-label">Estudiante</label>
+        <select class="form-select" id="idinscripcion" name="idinscripcion" required {{ 'disabled' if calificacion
+            else '' }}>
+            <option value="">Seleccione un estudiante</option>
+            {% for insc in inscripciones %}
+            <option value="{{ insc.idinscripcion }}" {% if calificacion and
+                calificacion.idinscripcion==insc.idinscripcion %}selected{% endif %}>
+                {{ insc.nombre_completo }}
+            </option>
+            {% endfor %}
+        </select>
+        {% if calificacion %}
+        <input type="hidden" name="idinscripcion" value="{{ calificacion.idinscripcion }}">
+        {% endif %}
+    </div>
+
+    <div class="mb-3">
+        <label for="calificacion" class="form-label">Calificación (0-10)</label>
+        <input type="number" step="0.01" min="0" max="10" class="form-control" id="calificacion" name="calificacion"
+            value="{{ calificacion.calificacion if calificacion else '' }}" required>
+    </div>
+
+    <div class="mb-3">
+        <label for="observaciones" class="form-label">Observaciones</label>
+        <textarea class="form-control" id="observaciones" name="observaciones"
+            rows="3">{{ calificacion.observaciones if calificacion else '' }}</textarea>
+    </div>
+
+    <button type="submit" class="btn btn-success">Guardar</button>
+    <a href="{{ url_for('list_calificacion_estudiante') }}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}

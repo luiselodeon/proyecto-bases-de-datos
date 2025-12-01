@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block title %}Asignación a Cursos{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Asignación a Cursos (Clases Programadas)</h1>
+    <a href="{{ url_for('add_clase') }}" class="btn btn-primary">Añadir Clase</a>
+</div>
+
+<!-- Search Form -->
+<form action="{{ url_for('search_clases') }}" method="get" class="mb-4">
+    <div class="input-group">
+        <input type="text" name="query" class="form-control" placeholder="Buscar por asignatura o docente...">
+        <button type="submit" class="btn btn-outline-secondary">Buscar</button>
+    </div>
+</form>
+
+<!-- Tabla de Clases Programadas -->
+<div class="card">
+    <div class="card-header">Lista de Clases Programadas</div>
+    <div class="card-body">
+        <table class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th>Asignatura</th>
+                    <th>Docente</th>
+                    <th>Periodo</th>
+                    <th>Horario</th>
+                    <th>Aula</th>
+                    <th>Modalidad</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in clases %}
+                <tr>
+                    <td>{{ c.nombre_asignatura }}</td>
+                    <td>{{ c.nombre_docente }}</td>
+                    <td>{{ c.descripcion_periodo }}</td>
+                    <td>{{ c.dia_semana }} {{ c.hora_inicio|format_timedelta }}-{{ c.hora_fin|format_timedelta }}</td>
+                    <td>{{ c.descripcion_aula }}</td>
+                    <td>{{ c.modalidad }}</td>
+                    <td>
+                        <a href="{{ url_for('edit_clase', idclase=c.idclaseprogramada) }}"
+                            class="btn btn-sm btn-warning">Editar</a>
+                        <form action="{{ url_for('delete_clase', idclase=c.idclaseprogramada) }}" method="post"
+                            style="display:inline;" onsubmit="return confirm('¿Eliminar?');">
+                            <button type="submit" class="btn btn-sm btn-danger">Eliminar</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center">No hay clases programadas.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

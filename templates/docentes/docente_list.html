@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}Administración Personal - Docentes{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Administración Personal - Docentes</h1>
+    <a href="{{ url_for('add_docente') }}" class="btn btn-primary">Añadir Docente</a>
+</div>
+
+<!-- Search Form -->
+<form action="{{ url_for('search_docentes') }}" method="get" class="mb-4">
+    <div class="input-group">
+        <input type="text" name="query" class="form-control" placeholder="Buscar por nombre o correo...">
+        <button type="submit" class="btn btn-outline-secondary">Buscar</button>
+    </div>
+</form>
+
+<!-- Tabla de Docentes -->
+<div class="card">
+    <div class="card-header">Lista de Docentes</div>
+    <div class="card-body">
+        <table class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Correo</th>
+                    <th>Fecha Alta</th>
+                    <th>Estatus</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for doc in docentes %}
+                <tr>
+                    <td>{{ doc.iddocente }}</td>
+                    <td>{{ doc.nombre }} {{ doc.apellido_paterno }} {{ doc.apellido_materno or '' }}</td>
+                    <td>{{ doc.correo }}</td>
+                    <td>{{ doc.fecha_alta }}</td>
+                    <td>
+                        <span class="badge bg-{{ 'success' if doc.estatus == 'A' else 'danger' }}">
+                            {{ 'Activo' if doc.estatus == 'A' else 'Baja' }}
+                        </span>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('edit_docente', iddocente=doc.iddocente) }}"
+                            class="btn btn-sm btn-warning">Editar</a>
+                        <form action="{{ url_for('delete_docente', iddocente=doc.iddocente) }}" method="post"
+                            style="display:inline;" onsubmit="return confirm('¿Eliminar?');">
+                            <button type="submit" class="btn btn-sm btn-danger">Eliminar</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center">No hay docentes registrados.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

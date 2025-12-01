@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Editar' if inscripcion else 'Añadir' }} Inscripción{% endblock %}
+{% block content %}
+<h2>{{ 'Editar' if inscripcion else 'Añadir' }} Inscripción</h2>
+<form method="POST">
+    <div class="mb-3">
+        <label for="matricula_alumno" class="form-label">Estudiante</label>
+        <select class="form-select" id="matricula_alumno" name="matricula_alumno" required {{ 'disabled' if inscripcion
+            else '' }}>
+            <option value="">Seleccione estudiante</option>
+            {% for est in estudiantes %}
+            <option value="{{ est.matricula_alumno }}" {% if inscripcion and
+                inscripcion.matricula_alumno==est.matricula_alumno %}selected{% endif %}>{{ est.nombre_completo }}
+            </option>
+            {% endfor %}
+        </select>
+        {% if inscripcion %}<input type="hidden" name="matricula_alumno" value="{{ inscripcion.matricula_alumno }}">{%
+        endif %}
+    </div>
+    <div class="mb-3">
+        <label for="idclaseprogramada" class="form-label">Clase Programada</label>
+        <select class="form-select" id="idclaseprogramada" name="idclaseprogramada" required>
+            <option value="">Seleccione clase programada</option>
+            {% for cp in clases_programadas %}
+            <option value="{{ cp.idclaseprogramada }}" {% if inscripcion and
+                inscripcion.idclaseprogramada==cp.idclaseprogramada %}selected{% endif %} {% if cp.inscritos>=
+                cp.capacidad %}disabled{% endif %}>
+                {{ cp.nombre_asignatura }} - {{ cp.descripcion_periodo }} - {{ cp.horario }} - {{ cp.nombre_docente }}
+                ({{ cp.descripcion_aula }}: {{ cp.inscritos }}/{{ cp.capacidad }})
+                {% if cp.inscritos >= cp.capacidad %} [LLENO]{% endif %}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="mb-3">
+        <label for="motivo_inscripcion" class="form-label">Motivo (opcional)</label>
+        <textarea class="form-control" id="motivo_inscripcion" name="motivo_inscripcion"
+            rows="2">{{ inscripcion.motivo_inscripcion if inscripcion else '' }}</textarea>
+    </div>
+    <div class="mb-3">
+        <label for="estatus" class="form-label">Estatus</label>
+        <select class="form-select" id="estatus" name="estatus" required>
+            <option value="INICIADA" {% if inscripcion and inscripcion.estatus=='INICIADA' %}selected{% endif %}>
+                Iniciada</option>
+            <option value="EN_PROCESO" {% if inscripcion and inscripcion.estatus=='EN_PROCESO' %}selected{% endif %}>En
+                Proceso</option>
+            <option value="CONCLUIDA" {% if inscripcion and inscripcion.estatus=='CONCLUIDA' %}selected{% endif %}>
+                Concluida</option>
+            <option value="CANCELADA" {% if inscripcion and inscripcion.estatus=='CANCELADA' %}selected{% endif %}>
+                Cancelada</option>
+        </select>
+    </div>
+    <button type="submit" class="btn btn-success">Guardar</button>
+    <a href="{{ url_for('list_inscripciones') }}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}

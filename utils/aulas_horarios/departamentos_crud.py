@@ -4,11 +4,11 @@ def list_departamentos(cursor):
     cursor.execute("SELECT * FROM departamentoacademico ORDER BY iddepartamentoacademico;")
     return cursor.fetchall()
 
-def add_departamento(cursor, iddep, nombre):
+def add_departamento(cursor, nombre):
     cursor.execute("""
-        INSERT INTO departamentoacademico (iddepartamentoacademico, nombre_departamento)
-        VALUES (%s, %s)
-    """, (iddep, nombre))
+        INSERT INTO departamentoacademico (nombre_departamento)
+        VALUES (%s)
+    """, (nombre,))
 
 def get_departamento(cursor, iddep):
     cursor.execute("SELECT * FROM departamentoacademico WHERE iddepartamentoacademico = %s;", (iddep,))

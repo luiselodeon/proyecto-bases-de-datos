@@ -8,17 +8,12 @@
 
 <form method="post">
 
-    {% if not tipo %}
-    <div class="mb-3">
-        <label class="form-label">ID Tipo</label>
-        <input type="number" class="form-control" name="idtipo_beca" required>
-    </div>
-    {% endif %}
+    {# ID is auto-generated #}
 
     <div class="mb-3">
         <label class="form-label">Nombre del Tipo</label>
-        <input type="text" class="form-control" name="nombre_tipo"
-               value="{{ tipo.nombre_tipo if tipo else '' }}" required>
+        <input type="text" class="form-control" name="nombre_tipo" value="{{ tipo.nombre_tipo if tipo else '' }}"
+            required>
     </div>
 
     <button class="btn btn-primary">{{ 'Actualizar' if tipo else 'Guardar' }}</button>

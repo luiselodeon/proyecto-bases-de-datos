@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Editar' if pago else 'Registrar' }} Pago{% endblock %}
+{% block content %}
+<h2>{{ 'Editar' if pago else 'Registrar' }} Pago</h2>
+<form method="POST">
+    <div class="mb-3">
+        <label for="idestadodecuenta" class="form-label">Estudiante</label>
+        <select class="form-select" id="idestadodecuenta" name="idestadodecuenta" {% if pago %}disabled{% else
+            %}required{% endif %}>
+            <option value="">Seleccione estudiante</option>
+            {% for e in estudiantes %}
+            <option value="{{ e.idestadodecuenta }}" {% if pago and pago.idestadodecuenta==e.idestadodecuenta
+                %}selected{% endif %}>
+                {{ e.nombre_completo }} ({{ e.matricula_alumno }}) - Saldo: ${{ e.saldo_actual }}
+            </option>
+            {% endfor %}
+        </select>
+        {% if pago %}
+        <input type="hidden" name="idestadodecuenta" value="{{ pago.idestadodecuenta }}">
+        {% endif %}
+    </div>
+
+    <div class="mb-3">
+        <label for="forma_pago" class="form-label">Forma de Pago</label>
+        <select class="form-select" id="forma_pago" name="forma_pago" required>
+            <option value="EFECTIVO" {% if pago and pago.forma_pago=='EFECTIVO' %}selected{% endif %}>Efectivo</option>
+            <option value="TRANSFERENCIA" {% if pago and pago.forma_pago=='TRANSFERENCIA' %}selected{% endif %}>
+                Transferencia</option>
+            <option value="TARJETA" {% if pago and pago.forma_pago=='TARJETA' %}selected{% endif %}>Tarjeta</option>
+            <option value="CHEQUE" {% if pago and pago.forma_pago=='CHEQUE' %}selected{% endif %}>Cheque</option>
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label for="tipo_movimiento" class="form-label">Tipo de Movimiento</label>
+        <select class="form-select" id="tipo_movimiento" name="tipo_movimiento" required>
+            <option value="PAGO" {% if pago and pago.tipo_movimiento=='PAGO' %}selected{% endif %}>Pago</option>
+            <option value="DESCUENTO" {% if pago and pago.tipo_movimiento=='DESCUENTO' %}selected{% endif %}>Descuento
+            </option>
+            <option value="BECA" {% if pago and pago.tipo_movimiento=='BECA' %}selected{% endif %}>Beca</option>
+            <option value="AJUSTE" {% if pago and pago.tipo_movimiento=='AJUSTE' %}selected{% endif %}>Ajuste</option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <label for="monto" class="form-label">Monto del Pago</label>
+        <input type="number" step="0.01" min="0.01" class="form-control" id="monto" name="monto"
+            value="{{ pago.importe_pago if pago else '' }}" required>
+    </div>
+
+    <div class="mb-3">
+        <label for="referencia" class="form-label">Referencia (Opcional)</label>
+        <input type="text" class="form-control" id="referencia" name="referencia"
+            value="{{ pago.referencia if pago else '' }}">
+    </div>
+    <button type="submit" class="btn btn-success">{{ 'Actualizar' if pago else 'Registrar' }} Pago</button>
+    <a href="{{ url_for('list_pagos') }}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}

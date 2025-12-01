@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Editar' if calendario else 'Añadir' }} Calendario Escolar{% endblock %}
+{% block content %}
+
+<h1>{{ 'Editar' if calendario else 'Añadir' }} Calendario Escolar</h1>
+<hr>
+
+<form method="post">
+    <div class="mb-3">
+        <label class="form-label">Descripción del Calendario</label>
+        <input type="text" class="form-control" name="descripcion"
+            value="{{ calendario.descripcion if calendario else '' }}" placeholder="Ej: Semestre Otoño 2025" required>
+        <div class="form-text">Descripción que identifica este calendario escolar</div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Fecha de Inicio</label>
+            <input type="date" class="form-control" name="fecha_inicio"
+                value="{{ calendario.fecha_inicio.strftime('%Y-%m-%d') if calendario and calendario.fecha_inicio else '' }}"
+                required>
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Fecha de Fin</label>
+            <input type="date" class="form-control" name="fecha_fin"
+                value="{{ calendario.fecha_fin.strftime('%Y-%m-%d') if calendario and calendario.fecha_fin else '' }}"
+                required>
+        </div>
+    </div>
+
+    <div class="alert alert-info">
+        <strong>Nota:</strong> La fecha de fin debe ser posterior o igual a la fecha de inicio.
+    </div>
+
+    <button type="submit" class="btn btn-primary">
+        {{ 'Actualizar' if calendario else 'Guardar' }}
+    </button>
+
+    <a href="{{ url_for('list_calendarios') }}" class="btn btn-secondary">
+        Cancelar
+    </a>
+</form>
+
+{% endblock %}

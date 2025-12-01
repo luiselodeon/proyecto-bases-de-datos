@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Editar' if plan else 'Añadir' }} Plan de Estudio{% endblock %}
+{% block content %}
+
+<h1>{{ 'Editar' if plan else 'Añadir' }} Plan de Estudio</h1>
+<hr>
+
+<form method="post">
+    <div class="mb-3">
+        <label for="nombre_plan" class="form-label">Nombre del Plan</label>
+        <input type="text" class="form-control" id="nombre_plan" name="nombre_plan"
+            value="{{ plan.nombre_plan if plan else '' }}" required placeholder="Ej: Plan de Estudios 2024">
+    </div>
+
+    <div class="mb-3">
+        <label for="idcarrera" class="form-label">Carrera</label>
+        <select class="form-select" id="idcarrera" name="idcarrera" required>
+            <option value="">Seleccione una carrera...</option>
+            {% for carrera in carreras %}
+            <option value="{{ carrera.idcarrera }}" {{ 'selected' if plan and plan.idcarrera==carrera.idcarrera else ''
+                }}>
+                {{ carrera.descripcion_carrera }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="mb-3">
+                <label for="vigencia_inicio" class="form-label">Vigencia Inicio</label>
+                <input type="date" class="form-control" id="vigencia_inicio" name="vigencia_inicio"
+                    value="{{ plan.vigencia_inicio if plan else '' }}" required>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="mb-3">
+                <label for="vigencia_fin" class="form-label">Vigencia Fin (Opcional)</label>
+                <input type="date" class="form-control" id="vigencia_fin" name="vigencia_fin"
+                    value="{{ plan.vigencia_fin if plan and plan.vigencia_fin else '' }}">
+                <small class="form-text text-muted">Dejar vacío si el plan sigue vigente</small>
+            </div>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">
+        {{ 'Actualizar' if plan else 'Guardar' }}
+    </button>
+    <a href="{{ url_for('list_planestudios') }}" class="btn btn-secondary">Cancelar</a>
+</form>
+
+{% endblock %}

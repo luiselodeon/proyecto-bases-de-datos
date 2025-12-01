@@ -9,43 +9,31 @@
 <form method="post">
 
     {# ID solo cuando es nueva beca #}
-    {% if not beca %}
-    <div class="mb-3">
-        <label for="idbeca" class="form-label">ID Beca</label>
-        <input type="number" class="form-control" id="idbeca"
-               name="idbeca" required>
-    </div>
-    {% endif %}
+    {# ID is auto-generated #}
 
     <div class="mb-3">
         <label for="descripcion_beca" class="form-label">Descripción</label>
-        <input type="text" class="form-control" id="descripcion_beca"
-               name="descripcion_beca"
-               value="{{ beca.descripcion_beca if beca else '' }}"
-               required>
+        <input type="text" class="form-control" id="descripcion_beca" name="descripcion_beca"
+            value="{{ beca.descripcion_beca if beca else '' }}" required>
     </div>
 
     <div class="mb-3">
         <label for="porcentaje_beca" class="form-label">% de Beca</label>
-        <input type="number" class="form-control" id="porcentaje_beca"
-               name="porcentaje_beca" min="0" max="100"
-               value="{{ beca.porcentaje_beca if beca else '' }}">
+        <input type="number" class="form-control" id="porcentaje_beca" name="porcentaje_beca" min="0" max="100"
+            value="{{ beca.porcentaje_beca if beca else '' }}">
     </div>
 
     <div class="mb-3">
         <label for="estatus_beca" class="form-label">Estatus</label>
         <select class="form-select" id="estatus_beca" name="estatus_beca">
             <option value="">Seleccione…</option>
-            <option value="A"
-                {% if beca and beca.estatus_beca == 'A' %}selected{% endif %}>
+            <option value="A" {% if beca and beca.estatus_beca=='A' %}selected{% endif %}>
                 Activa
             </option>
-            <option value="B"
-                {% if beca and beca.estatus_beca == 'B' %}selected{% endif %}>
+            <option value="B" {% if beca and beca.estatus_beca=='B' %}selected{% endif %}>
                 Baja
             </option>
-            <option value="C"
-                {% if beca and beca.estatus_beca == 'C' %}selected{% endif %}>
+            <option value="C" {% if beca and beca.estatus_beca=='C' %}selected{% endif %}>
                 Congelada
             </option>
         </select>
@@ -56,8 +44,7 @@
         <select class="form-select" id="idtipo_beca" name="idtipo_beca">
             <option value="">Seleccione un tipo…</option>
             {% for t in tipos_beca %}
-            <option value="{{ t.idtipo_beca }}"
-                {% if beca and beca.idtipo_beca == t.idtipo_beca %}selected{% endif %}>
+            <option value="{{ t.idtipo_beca }}" {% if beca and beca.idtipo_beca==t.idtipo_beca %}selected{% endif %}>
                 {{ t.nombre_tipo }}
             </option>
             {% endfor %}
@@ -70,4 +57,3 @@
     <a href="{{ url_for('list_becas') }}" class="btn btn-secondary">Cancelar</a>
 </form>
 {% endblock %}
-
