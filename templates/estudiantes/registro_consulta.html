@@ -12,7 +12,8 @@
 <!-- Search Form -->
 <form action="{{ url_for('search_student') }}" method="get" class="mb-4">
     <div class="input-group">
-        <input type="text" class="form-control" name="query" placeholder="Buscar por nombre, matrícula o correo...">
+        <input type="text" class="form-control" name="query"
+            placeholder="Buscar por nombre, matrícula, correo, tipo de beca o porcentaje...">
         <button class="btn btn-outline-secondary" type="submit">Buscar</button>
     </div>
 </form>
@@ -26,6 +27,10 @@
                 <tr>
                     <th>Matrícula</th>
                     <th>Nombre Completo</th>
+                    <th>Carrera</th>
+                    <th>Estatus</th>
+                    <th>Beca (%)</th>
+                    <th>Tipo Beca</th>
                     <th>Correo</th>
                     <th>Acciones</th>
                 </tr>
@@ -35,6 +40,10 @@
                 <tr>
                     <td>{{ student.matricula_alumno }}</td>
                     <td>{{ student.nombre }} {{ student.apellido_paterno }} {{ student.apellido_materno }}</td>
+                    <td>{{ student.descripcion_carrera }}</td>
+                    <td>{{ student.estatus }}</td>
+                    <td>{{ student.porcentaje_beca if student.porcentaje_beca is not none else 'N/A' }}%</td>
+                    <td>{{ student.nombre_tipo if student.nombre_tipo else 'N/A' }}</td>
                     <td>{{ student.correo }}</td>
                     <td>
                         <a href="{{ url_for('edit_student', matricula=student.matricula_alumno) }}"
@@ -48,7 +57,7 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="4" class="text-center">No se encontraron estudiantes.</td>
+                    <td colspan="8" class="text-center">No se encontraron estudiantes.</td>
                 </tr>
                 {% endfor %}
             </tbody>

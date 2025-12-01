@@ -81,6 +81,7 @@ def add_student():
             "apellido_materno": request.form["apellido_materno"],
             "correo": request.form["correo"],
             "idcarrera": request.form["idcarrera"],
+            "idbeca": request.form.get("idbeca") or None
         }
 
         # 2. Validación automática
@@ -105,7 +106,8 @@ def add_student():
                 form_data["apellido_paterno"],
                 form_data["apellido_materno"],
                 form_data["correo"],
-                form_data["idcarrera"]
+                form_data["idcarrera"],
+                form_data["idbeca"]
             )
             conn.commit()
             flash("Estudiante añadido correctamente.", "success")
@@ -122,9 +124,10 @@ def add_student():
 
     # GET - Obtener carreras para dropdown
     carreras = students_crud.get_carreras(cursor)
+    becas = students_crud.get_becas(cursor)
     cursor.close()
     conn.close()
-    return render_template('estudiantes/student_form.html', student=None, carreras=carreras)
+    return render_template('estudiantes/student_form.html', student=None, carreras=carreras, becas=becas)
 
 @app.route('/gestion_estudiantes/registro_consulta/edit/<int:matricula>', methods=['GET', 'POST'])
 def edit_student(matricula):
@@ -142,7 +145,9 @@ def edit_student(matricula):
             "apellido_paterno": request.form["apellido_paterno"],
             "apellido_materno": request.form["apellido_materno"],
             "correo": request.form["correo"],
-            # idcarrera no viene en edit → no se valida
+            "idbeca": request.form.get("idbeca") or None,
+            "idcarrera": request.form["idcarrera"],
+            "estatus": request.form["estatus"]
         }
 
         # 2. Validación automática
@@ -166,7 +171,10 @@ def edit_student(matricula):
                 form_data["nombre"],
                 form_data["apellido_paterno"],
                 form_data["apellido_materno"],
-                form_data["correo"]
+                form_data["correo"],
+                form_data["idcarrera"],
+                form_data["estatus"],
+                form_data["idbeca"]
             ):
                 conn.commit()
                 flash("Estudiante actualizado correctamente.", "success")
@@ -186,6 +194,7 @@ def edit_student(matricula):
     # GET
     student = students_crud.get_student(cursor, matricula)
     carreras = students_crud.get_carreras(cursor)  # para dropdown
+    becas = students_crud.get_becas(cursor)
     cursor.close()
     conn.close()
 
@@ -194,7 +203,8 @@ def edit_student(matricula):
             'estudiantes/student_form.html',
             student=student,
             matricula=matricula,
-            carreras=carreras
+            carreras=carreras,
+            becas=becas
         )
     else:
         flash("Estudiante no encontrado.", "warning")

@@ -29,17 +29,38 @@
             value="{{ student.correo if student else '' }}" required>
     </div>
 
-    {% if not student %}
     <div class="mb-3">
         <label for="idcarrera" class="form-label">Carrera</label>
         <select class="form-select" id="idcarrera" name="idcarrera" required>
             <option value="">Seleccione una carrera...</option>
             {% for carrera in carreras %}
-            <option value="{{ carrera.idcarrera }}">{{ carrera.descripcion_carrera }}</option>
+            <option value="{{ carrera.idcarrera }}" {% if student and student.idcarrera==carrera.idcarrera %}selected{%
+                endif %}>{{ carrera.descripcion_carrera }}</option>
             {% endfor %}
         </select>
     </div>
+
+    {% if student %}
+    <div class="mb-3">
+        <label for="estatus" class="form-label">Estatus</label>
+        <select class="form-select" id="estatus" name="estatus" required>
+            <option value="ACTIVO" {% if student.estatus=='ACTIVO' %}selected{% endif %}>ACTIVO</option>
+            <option value="BAJA" {% if student.estatus=='BAJA' %}selected{% endif %}>BAJA</option>
+            <option value="EGRESADO" {% if student.estatus=='EGRESADO' %}selected{% endif %}>EGRESADO</option>
+        </select>
+    </div>
     {% endif %}
+
+    <div class="mb-3">
+        <label for="idbeca" class="form-label">Beca</label>
+        <select class="form-select" id="idbeca" name="idbeca">
+            <option value="">Sin Beca</option>
+            {% for beca in becas %}
+            <option value="{{ beca.idbeca }}" {% if student and student.idbeca==beca.idbeca %}selected{% endif %}>
+                {{ beca.descripcion_beca }} - {{ beca.nombre_tipo }} ({{ beca.porcentaje_beca }}%)</option>
+            {% endfor %}
+        </select>
+    </div>
 
     <button type="submit" class="btn btn-primary">
         {{ 'Actualizar' if student else 'Guardar' }}
