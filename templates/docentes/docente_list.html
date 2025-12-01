@@ -25,7 +25,6 @@
                     <th>ID</th>
                     <th>Nombre</th>
                     <th>Correo</th>
-                    <th>Teléfono</th>
                     <th>Fecha Alta</th>
                     <th>Estatus</th>
                     <th>Acciones</th>
@@ -37,7 +36,6 @@
                     <td>{{ doc.iddocente }}</td>
                     <td>{{ doc.nombre }} {{ doc.apellido_paterno }} {{ doc.apellido_materno or '' }}</td>
                     <td>{{ doc.correo }}</td>
-                    <td>{{ doc.telefono or 'N/A' }}</td>
                     <td>{{ doc.fecha_alta }}</td>
                     <td>
                         <span class="badge bg-{{ 'success' if doc.estatus == 'A' else 'danger' }}">
@@ -55,7 +53,7 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="7" class="text-center">No hay docentes registrados.</td>
+                    <td colspan="6" class="text-center">No hay docentes registrados.</td>
                 </tr>
                 {% endfor %}
             </tbody>
