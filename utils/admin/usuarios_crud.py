@@ -24,22 +24,14 @@ def add_usuario(cursor, email, password, rol):
     return cursor.lastrowid
 
 def update_usuario(cursor, idusuario, email, rol, password=None):
-    """Update usuario, optionally change password"""
-    if password:
-        hashed_password = generate_password_hash(password)
-        query = """
-        UPDATE usuarios
-        SET email = %s, rol = %s, password = %s
-        WHERE idusuario = %s
-        """
-        cursor.execute(query, (email, rol, hashed_password, idusuario))
-    else:
-        query = """
-        UPDATE usuarios
-        SET email = %s, rol = %s
-        WHERE idusuario = %s
-        """
-        cursor.execute(query, (email, rol, idusuario))
+    """Update usuario (only rol is editable)"""
+    # Email and password are ignored in update
+    query = """
+    UPDATE usuarios
+    SET rol = %s
+    WHERE idusuario = %s
+    """
+    cursor.execute(query, (rol, idusuario))
 
 def delete_usuario(cursor, idusuario):
     """Delete usuario"""

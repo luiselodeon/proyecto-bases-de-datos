@@ -6,7 +6,7 @@
     <div class="mb-3">
         <label for="email" class="form-label">Email</label>
         <input type="email" class="form-control" id="email" name="email" value="{{ usuario.email if usuario else '' }}"
-            required>
+            required {{ 'readonly' if usuario else '' }}>
     </div>
     <div class="mb-3">
         <label for="rol" class="form-label">Rol</label>
@@ -19,10 +19,10 @@
         </select>
     </div>
     <div class="mb-3">
-        <label for="password" class="form-label">Contraseña {% if usuario %}(dejar en blanco para no cambiar){% endif
+        <label for="password" class="form-label">Contraseña {% if usuario %}(No editable){% endif
             %}</label>
-        <input type="password" class="form-control" id="password" name="password" {% if not usuario %}required{% endif
-            %}>
+        <input type="password" class="form-control" id="password" name="password" {% if not usuario %}required{% else
+            %}disabled{% endif %}>
     </div>
     <button type="submit" class="btn btn-success">Guardar</button>
     <a href="{{ url_for('list_usuarios') }}" class="btn btn-secondary">Cancelar</a>
