@@ -23,7 +23,8 @@
             <thead>
                 <tr>
                     <th>ID Asistencia</th>
-                    <th>Estudiante</th>
+                    <th>Asistente</th>
+                    <th>Tipo</th>
                     <th>Clase</th>
                     <th>Fecha</th>
                     <th>Estado</th>
@@ -34,7 +35,16 @@
                 {% for a in asistencias %}
                 <tr>
                     <td>{{ a.idasistencia }}</td>
-                    <td>{{ a.nombre_estudiante }}</td>
+                    <td>{{ a.nombre_asistente }}</td>
+                    <td>
+                        {% if a.tipo_asistente == 'ESTUDIANTE' %}
+                        <span class="badge bg-info text-dark">Estudiante</span>
+                        {% elif a.tipo_asistente == 'DOCENTE' %}
+                        <span class="badge bg-warning text-dark">Docente</span>
+                        {% else %}
+                        {{ a.tipo_asistente }}
+                        {% endif %}
+                    </td>
                     <td>{{ a.nombre_clase }}</td>
                     <td>{{ a.fecha_asistencia }}</td>
                     <td>{{ a.estado_asistencia }}</td>
@@ -50,7 +60,7 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="6" class="text-center">No hay asistencias registradas.</td>
+                    <td colspan="7" class="text-center">No hay asistencias registradas.</td>
                 </tr>
                 {% endfor %}
             </tbody>

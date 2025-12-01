@@ -3,3 +3,4 @@ flask-bcrypt
 python-dotenv
 requests
 mysql-connector-python
+Faker

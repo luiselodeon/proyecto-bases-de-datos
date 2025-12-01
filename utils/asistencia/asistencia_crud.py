@@ -4,7 +4,12 @@ def list_asistencias(cursor):
     query = """
     SELECT 
         asi.idasistencia,
-        CONCAT(p.nombre, ' ', p.apellido_paterno, ' ', IFNULL(p.apellido_materno, '')) AS nombre_estudiante,
+        CASE 
+            WHEN asi.tipo = 'ESTUDIANTE' THEN CONCAT(p.nombre, ' ', p.apellido_paterno, ' ', IFNULL(p.apellido_materno, ''))
+            WHEN asi.tipo = 'DOCENTE' THEN CONCAT(pd.nombre, ' ', pd.apellido_paterno, ' ', IFNULL(pd.apellido_materno, ''))
+            ELSE 'Desconocido'
+        END AS nombre_asistente,
+        asi.tipo AS tipo_asistente,
         a.nombre_asignatura AS nombre_clase,
         asi.fecha AS fecha_asistencia,
         asi.estatus AS estado_asistencia
@@ -13,6 +18,8 @@ def list_asistencias(cursor):
     JOIN asignatura a ON cp.idasignatura = a.idasignatura
     LEFT JOIN estudiante e ON asi.matricula_alumno = e.matricula_alumno
     LEFT JOIN persona p ON e.idpersona = p.idpersona
+    LEFT JOIN docente d ON asi.iddocente = d.iddocente
+    LEFT JOIN persona pd ON d.idpersona = pd.idpersona
     ORDER BY asi.fecha DESC
     """
     cursor.execute(query)
@@ -104,9 +111,10 @@ def search_asistencias(cursor, query_term):
         asi.observaciones,
         a.nombre_asignatura,
         CASE 
-            WHEN asi.tipo = 'ESTUDIANTE' THEN CONCAT(p.nombre, ' ', p.apellido_paterno)
-            WHEN asi.tipo = 'DOCENTE' THEN CONCAT(pd.nombre, ' ', pd.apellido_paterno)
-        END AS persona_nombre
+            WHEN asi.tipo = 'ESTUDIANTE' THEN CONCAT(p.nombre, ' ', p.apellido_paterno, ' ', IFNULL(p.apellido_materno, ''))
+            WHEN asi.tipo = 'DOCENTE' THEN CONCAT(pd.nombre, ' ', pd.apellido_paterno, ' ', IFNULL(pd.apellido_materno, ''))
+            ELSE 'Desconocido'
+        END AS nombre_asistente
     FROM asistencia asi
     JOIN claseprogramada cp ON asi.idclaseprogramada = cp.idclaseprogramada
     JOIN asignatura a ON cp.idasignatura = a.idasignatura

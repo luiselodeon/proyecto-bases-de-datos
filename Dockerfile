@@ -1,6 +1,9 @@
 # Usa una imagen base de Python
 FROM python:3.9-slim
 
+# Install MySQL client for healthcheck
+RUN apt-get update && apt-get install -y default-mysql-client && rm -rf /var/lib/apt/lists/*
+
 # Establece el directorio de trabajo en /app
 WORKDIR /app
 
@@ -11,8 +14,15 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copia el resto de la aplicación
 COPY . .
 
+# Copy and make entrypoint executable
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 # Expone el puerto en el que corre la aplicación
 EXPOSE 5000
 
+# Set entrypoint
+ENTRYPOINT ["docker-entrypoint.sh"]
+
 # Comando para correr la aplicación
-CMD ["python", "app.py"]
+CMD ["flask", "run", "--host=0.0.0.0", "--port=5000"]
