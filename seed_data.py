@@ -807,18 +807,35 @@ def seed_asistencia(cursor, clases, inscripciones):
     print(f"Created {count} attendance records\n")
 
 def seed_usuarios(cursor):
-    """Create admin user"""
-    print(f"Creating admin user...")
+    """Create admin and other users"""
+    print(f"Creating users...")
     
-    password = 'admin123'
-    hashed_password = generate_password_hash(password)
-    
+    # Admin
+    admin_pass = 'admin123'
+    admin_hash = generate_password_hash(admin_pass)
     cursor.execute("""
         INSERT INTO usuarios (email, password, rol)
         VALUES ('admin@universidad.edu', %s, 'admin')
-    """, (hashed_password,))
-    
-    print(f"Created admin user (email: admin@universidad.edu, password: {password})\n")
+    """, (admin_hash,))
+    print(f"Created admin user (email: admin@universidad.edu, password: {admin_pass})")
+
+    # Finanzas
+    finanzas_pass = 'finanzas123'
+    finanzas_hash = generate_password_hash(finanzas_pass)
+    cursor.execute("""
+        INSERT INTO usuarios (email, password, rol)
+        VALUES ('finanzas@universidad.edu', %s, 'finanzas_becas')
+    """, (finanzas_hash,))
+    print(f"Created finanzas user (email: finanzas@universidad.edu, password: {finanzas_pass})")
+
+    # Operacion
+    operacion_pass = 'operacion123'
+    operacion_hash = generate_password_hash(operacion_pass)
+    cursor.execute("""
+        INSERT INTO usuarios (email, password, rol)
+        VALUES ('operacion@universidad.edu', %s, 'operacion_academica')
+    """, (operacion_hash,))
+    print(f"Created operacion user (email: operacion@universidad.edu, password: {operacion_pass})\n")
 
 def main():
     """Main seeding function"""

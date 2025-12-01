@@ -137,7 +137,9 @@ def search_student(cursor, query_term):
        OR e.matricula_alumno LIKE %s
        OR tb.nombre_tipo LIKE %s
        OR CAST(b.porcentaje_beca AS CHAR) LIKE %s
+       OR c.descripcion_carrera LIKE %s
+       OR e.estatus LIKE %s
     ORDER BY e.matricula_alumno ASC;
     """
-    cursor.execute(query, (search_pattern, search_pattern, search_pattern, search_pattern, search_pattern, search_pattern, search_pattern))
+    cursor.execute(query, (search_pattern, search_pattern, search_pattern, search_pattern, search_pattern, search_pattern, search_pattern, search_pattern, search_pattern))
     return cursor.fetchall()
