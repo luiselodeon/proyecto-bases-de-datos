@@ -848,6 +848,13 @@ def add_planestudio():
             flash("Plan de estudio añadido correctamente.", "success")
             return redirect(url_for("list_planestudios"))
 
+        except ValueError as ve:
+            conn.rollback()
+            flash(str(ve), "danger")
+            cursor.close()
+            conn.close()
+            return redirect(request.referrer)
+
         except mysql.connector.Error as err:
             conn.rollback()
             flash(f"Error al añadir plan de estudio: {err}", "danger")
@@ -907,6 +914,13 @@ def edit_planestudio(idplanestudio):
 
             conn.commit()
             flash("Plan de estudio actualizado correctamente.", "success")
+
+        except ValueError as ve:
+            conn.rollback()
+            flash(str(ve), "danger")
+            cursor.close()
+            conn.close()
+            return redirect(request.referrer)
 
         except mysql.connector.Error as err:
             conn.rollback()
@@ -2700,6 +2714,13 @@ def add_capacitacion():
             )
             conn.commit()
             flash("Capacitación añadida correctamente.", "success")
+        except ValueError as ve:
+            conn.rollback()
+            flash(str(ve), "danger")
+            cursor.close()
+            conn.close()
+            return redirect(request.referrer)
+
         except mysql.connector.Error as err:
             conn.rollback()
             flash(f"Error al añadir capacitación: {err}", "danger")
@@ -2750,6 +2771,13 @@ def edit_capacitacion(idcapacitacion):
             )
             conn.commit()
             flash("Capacitación actualizada correctamente.", "success")
+        except ValueError as ve:
+            conn.rollback()
+            flash(str(ve), "danger")
+            cursor.close()
+            conn.close()
+            return redirect(request.referrer)
+
         except mysql.connector.Error as err:
             conn.rollback()
             flash(f"Error al actualizar capacitación: {err}", "danger")
@@ -2921,6 +2949,23 @@ def add_prerequisito():
 
         if not valid:
             flash(error, "danger")
+        else:
+            try:
+                prerequisito_crud.add_prerequisito(
+                    cursor,
+                    request.form["idasignatura"],
+                    request.form["idasignatura_prereq"]
+                )
+                conn.commit()
+                flash("Prerequisito añadido correctamente.", "success")
+                return redirect(url_for("list_prerequisitos"))
+            except mysql.connector.Error as err:
+                conn.rollback()
+                flash(f"Error al añadir prerequisito: {err}", "danger")
+
+    asignaturas = prerequisito_crud.get_asignaturas(cursor)
+    cursor.close()
+    conn.close()
 
     return render_template("cursos/prerequisito_form.html", asignaturas=asignaturas)
 

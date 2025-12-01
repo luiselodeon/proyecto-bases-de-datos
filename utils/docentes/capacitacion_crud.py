@@ -16,6 +16,9 @@ def get_capacitacion(cursor, idcapacitacion):
 
 def add_capacitacion(cursor, descripcion, fecha_inicio, fecha_fin, horas, institucion):
     """Add new capacitacion"""
+    if fecha_fin and str(fecha_fin) < str(fecha_inicio):
+        raise ValueError("La fecha de fin no puede ser menor a la fecha de inicio.")
+
     query = """
     INSERT INTO capacitacion (descripcion, fecha_inicio, fecha_fin, horas_capacitacion, institucion)
     VALUES (%s, %s, %s, %s, %s)
@@ -25,6 +28,9 @@ def add_capacitacion(cursor, descripcion, fecha_inicio, fecha_fin, horas, instit
 
 def update_capacitacion(cursor, idcapacitacion, descripcion, fecha_inicio, fecha_fin, horas, institucion):
     """Update capacitacion"""
+    if fecha_fin and str(fecha_fin) < str(fecha_inicio):
+        raise ValueError("La fecha de fin no puede ser menor a la fecha de inicio.")
+
     query = """
     UPDATE capacitacion
     SET descripcion = %s, fecha_inicio = %s, fecha_fin = %s, horas_capacitacion = %s, institucion = %s

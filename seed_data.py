@@ -52,12 +52,20 @@ def seed_personas(cursor, count=100):
     """Generate persona records"""
     print(f"Creating {count} personas...")
     personas = []
+    generated_emails = set()
     
     for i in range(count):
         nombre = fake.first_name()
         apellido_paterno = fake.last_name()
         apellido_materno = fake.last_name()
-        correo = f"{nombre.lower()}.{apellido_paterno.lower()}@{fake.domain_name()}"
+        # Ensure unique email
+        while True:
+            clean_nombre = nombre.lower().replace(' ', '.')
+            clean_apellido = apellido_paterno.lower().replace(' ', '.')
+            correo = f"{clean_nombre}.{clean_apellido}{random.randint(1, 999)}@universidad.edu"
+            if correo not in generated_emails:
+                generated_emails.add(correo)
+                break
         
         cursor.execute("""
             INSERT INTO persona (nombre, apellido_paterno, apellido_materno, correo)
@@ -190,9 +198,15 @@ def seed_planes_estudio(cursor, carreras):
     
     ids = []
     for idcarrera in carreras:
-        nombre_plan = f"Plan {random.choice([2020, 2021, 2022, 2023])}"
-        vigencia_inicio = fake.date_between(start_date='-3y', end_date='today')
-        vigencia_fin = None if random.random() > 0.3 else fake.date_between(start_date='today', end_date='+2y')
+        # Get career name
+        cursor.execute("SELECT descripcion_carrera FROM carrera WHERE idcarrera = %s", (idcarrera,))
+        nombre_carrera = cursor.fetchone()[0]
+        
+        vigencia_inicio = fake.date_between(start_date=datetime(2015, 1, 1), end_date=datetime(2025, 12, 31))
+        anio_plan = vigencia_inicio.year
+        nombre_plan = f"Plan {nombre_carrera} {anio_plan}"
+        
+        vigencia_fin = None if random.random() > 0.3 else fake.date_between(start_date=vigencia_inicio, end_date=datetime(2035, 12, 31))
         
         cursor.execute("""
             INSERT INTO planestudio (nombre_plan, vigencia_inicio, vigencia_fin, idcarrera)
@@ -272,7 +286,7 @@ def seed_capacitaciones(cursor, count=10):
     ids = []
     for i in range(count):
         descripcion = f"{random.choice(tipos)} {random.choice(temas)}"
-        fecha_inicio = fake.date_between(start_date='-1y', end_date='+6m')
+        fecha_inicio = fake.date_between(start_date=datetime(2020, 1, 1), end_date=datetime(2025, 12, 31))
         fecha_fin = fecha_inicio + timedelta(days=random.randint(30, 180))
         horas = Decimal(random.choice([20, 30, 40, 60, 80, 100, 120]))
         institucion = fake.company()
@@ -307,7 +321,7 @@ def seed_certificaciones(cursor, count=10):
     for i in range(min(count, len(certs))):
         nombre = certs[i]
         institucion_emisora = fake.company()
-        fecha_cert = fake.date_between(start_date='-2y', end_date='today')
+        fecha_cert = fake.date_between(start_date=datetime(2020, 1, 1), end_date=datetime(2025, 12, 31))
         
         cursor.execute("""
             INSERT INTO certificacion (descripcion, institucion, fecha_certificacion)
@@ -368,56 +382,62 @@ def seed_horarios(cursor, count=20):
     print(f"Created {len(ids)} horarios\n")
     return ids
 
-def seed_periodos_inscripciones(cursor, count=5):
-    """Generate periodo inscripciones records"""
-    print(f"Creating {count} periodos de inscripciones...")
+def seed_periodos_inscripciones(cursor, count=None):
+    """Generate periodo inscripciones records for 2015-2035"""
+    print(f"Creating periodos de inscripciones (2015-2035)...")
     
     ids = []
-    start_year = 2022
+    start_year = 2015
+    end_year = 2035
     
-    for i in range(count):
-        year = start_year + (i // 2)
-        periodo = "Ene-Jun" if i % 2 == 0 else "Ago-Dic"
-        descripcion = f"{periodo} {year}"
-        estatus = random.choice(['ABIERTO', 'ABIERTO', 'CERRADO'])
-        costo_credito = Decimal(random.choice([500.00, 550.00, 600.00, 650.00]))
-        
-        if i % 2 == 0:  # Ene-Jun
-            fecha_inicio = datetime(year, 1, 15).date()
-            fecha_fin = datetime(year, 6, 30).date()
-        else:  # Ago-Dic
-            fecha_inicio = datetime(year, 8, 15).date()
-            fecha_fin = datetime(year, 12, 20).date()
+    for year in range(start_year, end_year + 1):
+        # Period 1: Ene-Jun
+        descripcion_1 = f"Ene-Jun {year}"
+        fecha_inicio_1 = datetime(year, 1, 15).date()
+        fecha_fin_1 = datetime(year, 6, 30).date()
+        estatus_1 = random.choice(['ABIERTO', 'ABIERTO', 'CERRADO'])
+        costo_credito_1 = Decimal(random.choice([500.00, 550.00, 600.00, 650.00]))
         
         cursor.execute("""
             INSERT INTO periodoinscripciones (descripcion_periodo, fecha_inicio_insc, fecha_fin_insc, estatus, costo_por_credito)
             VALUES (%s, %s, %s, %s, %s)
-        """, (descripcion, fecha_inicio, fecha_fin, estatus, costo_credito))
+        """, (descripcion_1, fecha_inicio_1, fecha_fin_1, estatus_1, costo_credito_1))
+        ids.append(cursor.lastrowid)
+
+        # Period 2: Ago-Dic
+        descripcion_2 = f"Ago-Dic {year}"
+        fecha_inicio_2 = datetime(year, 8, 15).date()
+        fecha_fin_2 = datetime(year, 12, 20).date()
+        estatus_2 = random.choice(['ABIERTO', 'ABIERTO', 'CERRADO'])
+        costo_credito_2 = Decimal(random.choice([500.00, 550.00, 600.00, 650.00]))
+        
+        cursor.execute("""
+            INSERT INTO periodoinscripciones (descripcion_periodo, fecha_inicio_insc, fecha_fin_insc, estatus, costo_por_credito)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (descripcion_2, fecha_inicio_2, fecha_fin_2, estatus_2, costo_credito_2))
         ids.append(cursor.lastrowid)
     
     print(f"Created {len(ids)} periodos de inscripciones\n")
     return ids
 
-def seed_calendario_escolar(cursor, periodos, count=5):
-    """Generate calendario escolar records"""
-    print(f"Creating {count} calendarios escolares...")
+def seed_calendario_escolar(cursor, periodos=None, count=None):
+    """Generate calendario escolar records for 2015-2035"""
+    print(f"Creating calendarios escolares (2015-2035)...")
     
     ids = []
-    for i, idperiodo in enumerate(periodos[:count]):
-        descripcion = f"Calendario Escolar {2022 + i}"
+    start_year = 2015
+    end_year = 2035
+    
+    for year in range(start_year, end_year + 1):
+        descripcion = f"Calendario Escolar {year}"
+        fecha_inicio = datetime(year, 1, 1).date()
+        fecha_fin = datetime(year, 12, 31).date()
         
-        # Get periodo dates to base calendar on
-        cursor.execute("SELECT fecha_inicio_insc, fecha_fin_insc FROM periodoinscripciones WHERE idperiodoinscripciones = %s", (idperiodo,))
-        result = cursor.fetchone()
-        if result:
-            fecha_inicio = result[0]
-            fecha_fin = result[1]
-            
-            cursor.execute("""
-                INSERT INTO calendarioescolar (descripcion, fecha_inicio, fecha_fin)
-                VALUES (%s, %s, %s)
-            """, (descripcion, fecha_inicio, fecha_fin))
-            ids.append(cursor.lastrowid)
+        cursor.execute("""
+            INSERT INTO calendarioescolar (descripcion, fecha_inicio, fecha_fin)
+            VALUES (%s, %s, %s)
+        """, (descripcion, fecha_inicio, fecha_fin))
+        ids.append(cursor.lastrowid)
     
     print(f"Created {len(ids)} calendarios escolares\n")
     return ids
@@ -445,7 +465,7 @@ def seed_estudiantes(cursor, personas, carreras, planes, becas, count=30):
         idestadodecuenta = cursor.lastrowid
         
         # Create estudiante (matricula_alumno is AUTO_INCREMENT)
-        fecha_ingreso = fake.date_between(start_date='-4y', end_date='today')
+        fecha_ingreso = fake.date_between(start_date=datetime(2018, 1, 1), end_date=datetime(2025, 12, 31))
         idplanestudio = random.choice([p for p in planes])  # Get matching plan
         idbeca = random.choice(becas + [None, None, None])  # 25% have scholarship
         estatus = random.choice(['ACTIVO', 'ACTIVO', 'ACTIVO', 'BAJA'])  # Mostly active
@@ -468,8 +488,8 @@ def seed_docentes(cursor, personas, count=30):
     ids = []
     
     for idpersona in docente_personas:
-        fecha_alta = fake.date_between(start_date='-10y', end_date='-1y')
-        fecha_baja = None if random.random() > 0.1 else fake.date_between(start_date=fecha_alta, end_date='today')
+        fecha_alta = fake.date_between(start_date=datetime(2015, 1, 1), end_date=datetime(2024, 1, 1))
+        fecha_baja = None if random.random() > 0.1 else fake.date_between(start_date=fecha_alta, end_date=datetime(2035, 12, 31))
         estatus = 'B' if fecha_baja else 'A'
         
         cursor.execute("""
@@ -524,7 +544,7 @@ def seed_inscripciones(cursor, estudiantes, clases, count=50):
     for i in range(count):
         matricula = random.choice(estudiantes)  # estudiantes are already matricula_alumno IDs
         idclase = random.choice(clases)
-        fecha_inscripcion = fake.date_between(start_date='-6m', end_date='today')
+        fecha_inscripcion = fake.date_between(start_date=datetime(2023, 1, 1), end_date=datetime(2025, 12, 31))
         motivo = random.choice([None, None, "Inscripción regular", "Cambio de grupo"])
         estatus = random.choice(['INICIADA', 'EN_PROCESO', 'EN_PROCESO', 'CONCLUIDA'])
         
@@ -609,7 +629,7 @@ def seed_pagos(cursor, estudiantes, count=20):
             continue
         idestadodecuenta, saldo_actual = result[0], result[1]
         
-        fecha_pago = fake.date_between(start_date='-6m', end_date='today')
+        fecha_pago = fake.date_between(start_date=datetime(2023, 1, 1), end_date=datetime(2025, 12, 31))
         hora_pago = fake.time()
         forma_pago = random.choice(formas_pago)
         tipo_movimiento = random.choice(tipos_movimiento)
@@ -705,7 +725,7 @@ def seed_evaluaciones(cursor, clases):
         for i in range(num_evals):
             tipo = random.choice(tipos)
             descripcion = f"{tipo.capitalize()} {i+1}"
-            fecha = fake.date_between(start_date='-4m', end_date='today')
+            fecha = fake.date_between(start_date=datetime(2023, 1, 1), end_date=datetime(2025, 12, 31))
             porcentaje = Decimal(100 / num_evals).quantize(Decimal('0.01'))
             
             try:
@@ -774,7 +794,7 @@ def seed_asistencia(cursor, clases, inscripciones):
     for idclase in clases:
         # Generate 5 sessions per class
         for _ in range(5):
-            fecha = fake.date_between(start_date='-1m', end_date='today')
+            fecha = fake.date_between(start_date=datetime(2023, 1, 1), end_date=datetime(2025, 12, 31))
             
             # Student attendance
             if idclase in class_students:
@@ -851,34 +871,34 @@ def main():
         clear_database(cursor)
         
         # Seed base tables
-        personas = seed_personas(cursor, 100)
-        deptos_academicos = seed_departamentos_academicos(cursor, 5)
-        deptos_asignatura = seed_departamentos_asignatura(cursor, 5)
-        tipos_beca = seed_tipos_beca(cursor, 5)
-        becas = seed_becas(cursor, tipos_beca, 10)
+        personas = seed_personas(cursor, 5000)
+        deptos_academicos = seed_departamentos_academicos(cursor, 10)
+        deptos_asignatura = seed_departamentos_asignatura(cursor, 10)
+        tipos_beca = seed_tipos_beca(cursor, 100)
+        becas = seed_becas(cursor, tipos_beca, 100)
         
         # Seed first-level dependencies
-        carreras = seed_carreras(cursor, deptos_academicos, 8)
+        carreras = seed_carreras(cursor, deptos_academicos, 100)
         planes = seed_planes_estudio(cursor, carreras)
-        asignaturas = seed_asignaturas(cursor, deptos_asignatura, 40)
+        asignaturas = seed_asignaturas(cursor, deptos_asignatura, 250)
         seed_plan_asignatura(cursor, planes, asignaturas)
-        capacitaciones = seed_capacitaciones(cursor, 10)
-        certificaciones = seed_certificaciones(cursor, 10)
-        aulas = seed_aulas(cursor, 15)
-        horarios = seed_horarios(cursor, 20)
-        periodos = seed_periodos_inscripciones(cursor, 5)
-        seed_calendario_escolar(cursor, periodos, 5)
+        capacitaciones = seed_capacitaciones(cursor, 250)
+        certificaciones = seed_certificaciones(cursor, 250)
+        aulas = seed_aulas(cursor, 150)
+        horarios = seed_horarios(cursor, 150)
+        periodos = seed_periodos_inscripciones(cursor, 150)
+        seed_calendario_escolar(cursor, periodos, 150)
         
-        # Seed CRITICAL tables (30 records each)
-        estudiantes = seed_estudiantes(cursor, personas, carreras, planes, becas, 30)
-        docentes = seed_docentes(cursor, personas, 30)
-        clases = seed_clases_programadas(cursor, asignaturas, docentes, periodos, aulas, horarios, 30)
+        # Seed CRITICAL tables (1500 records each)
+        estudiantes = seed_estudiantes(cursor, personas, carreras, planes, becas, 1500)
+        docentes = seed_docentes(cursor, personas, 75)
+        clases = seed_clases_programadas(cursor, asignaturas, docentes, periodos, aulas, horarios, 375)
         
         # Seed relationship tables
-        inscripciones = seed_inscripciones(cursor, estudiantes, clases, 50)
+        inscripciones = seed_inscripciones(cursor, estudiantes, clases, 2500)
         seed_docente_capacitaciones(cursor, docentes, capacitaciones)
         seed_docente_certificaciones(cursor, docentes, certificaciones)
-        seed_pagos(cursor, estudiantes, 20)
+        seed_pagos(cursor, estudiantes, 1000)
         
         # Seed new modules
         seed_prerequisitos(cursor, asignaturas)

@@ -72,10 +72,108 @@ def check_classroom_capacity(cursor, idclaseprogramada):
     
     return True, None
 
+def check_duplicate_subject(cursor, matricula_alumno, idclaseprogramada, exclude_inscripcion_id=None):
+    """Check if student is already enrolled in the same subject in the same period"""
+    query = """
+    SELECT i.idinscripcion
+    FROM inscripcion i
+    JOIN claseprogramada cp ON i.idclaseprogramada = cp.idclaseprogramada
+    WHERE i.matricula_alumno = %s
+      AND cp.idasignatura = (SELECT idasignatura FROM claseprogramada WHERE idclaseprogramada = %s)
+      AND cp.idperiodoinscripciones = (SELECT idperiodoinscripciones FROM claseprogramada WHERE idclaseprogramada = %s)
+      AND i.estatus != 'CANCELADA'
+    """
+    params = [matricula_alumno, idclaseprogramada, idclaseprogramada]
+    
+    if exclude_inscripcion_id:
+        query += " AND i.idinscripcion != %s"
+        params.append(exclude_inscripcion_id)
+        
+    cursor.execute(query, tuple(params))
+    result = cursor.fetchall()
+    
+    if len(result) > 0:
+        return False, "El alumno ya está inscrito en esta materia en este periodo."
+    return True, None
+
+def check_concurrent_prerequisites(cursor, matricula_alumno, idclaseprogramada, exclude_inscripcion_id=None):
+    """Check if student is enrolling in a subject and its prerequisite in the same period (both directions)"""
+    
+    # 1. Forward Check: Does the new subject require any subject currently being taken?
+    query_forward = """
+    SELECT a.nombre_asignatura
+    FROM prerequisito_asignatura pa
+    JOIN asignatura a ON pa.idasignatura_prereq = a.idasignatura
+    WHERE pa.idasignatura = (SELECT idasignatura FROM claseprogramada WHERE idclaseprogramada = %s)
+      AND pa.idasignatura_prereq IN (
+          SELECT cp.idasignatura
+          FROM inscripcion i
+          JOIN claseprogramada cp ON i.idclaseprogramada = cp.idclaseprogramada
+          WHERE i.matricula_alumno = %s
+            AND cp.idperiodoinscripciones = (SELECT idperiodoinscripciones FROM claseprogramada WHERE idclaseprogramada = %s)
+            AND i.estatus != 'CANCELADA'
+            {exclude_clause}
+      )
+    """
+    
+    # 2. Reverse Check: Is the new subject a prerequisite for any subject currently being taken?
+    query_reverse = """
+    SELECT a.nombre_asignatura
+    FROM prerequisito_asignatura pa
+    JOIN asignatura a ON pa.idasignatura = a.idasignatura
+    WHERE pa.idasignatura_prereq = (SELECT idasignatura FROM claseprogramada WHERE idclaseprogramada = %s)
+      AND pa.idasignatura IN (
+          SELECT cp.idasignatura
+          FROM inscripcion i
+          JOIN claseprogramada cp ON i.idclaseprogramada = cp.idclaseprogramada
+          WHERE i.matricula_alumno = %s
+            AND cp.idperiodoinscripciones = (SELECT idperiodoinscripciones FROM claseprogramada WHERE idclaseprogramada = %s)
+            AND i.estatus != 'CANCELADA'
+            {exclude_clause}
+      )
+    """
+
+    exclude_clause = ""
+    params_forward = [idclaseprogramada, matricula_alumno, idclaseprogramada]
+    params_reverse = [idclaseprogramada, matricula_alumno, idclaseprogramada]
+
+    if exclude_inscripcion_id:
+        exclude_clause = "AND i.idinscripcion != %s"
+        params_forward.append(exclude_inscripcion_id)
+        params_reverse.append(exclude_inscripcion_id)
+
+    # Execute Forward Check
+    cursor.execute(query_forward.format(exclude_clause=exclude_clause), tuple(params_forward))
+    results_forward = cursor.fetchall()
+    
+    if results_forward:
+        prereqs = ", ".join([r['nombre_asignatura'] for r in results_forward])
+        return False, f"No se puede inscribir porque depende de: {prereqs}, que también se está cursando."
+
+    # Execute Reverse Check
+    cursor.execute(query_reverse.format(exclude_clause=exclude_clause), tuple(params_reverse))
+    results_reverse = cursor.fetchall()
+
+    if results_reverse:
+        subjects = ", ".join([r['nombre_asignatura'] for r in results_reverse])
+        return False, f"No se puede inscribir porque es prerequisito de: {subjects}, que también se está cursando."
+
+    return True, None
+
 def add_inscripcion(cursor, matricula_alumno, idclaseprogramada, motivo_inscripcion, estatus='INICIADA'):
-    """Add new inscripcion with capacity validation"""
-    # Check capacity first
+    """Add new inscripcion with validations"""
+    # 1. Check capacity
     can_enroll, error = check_classroom_capacity(cursor, idclaseprogramada)
+    if not can_enroll:
+        raise Exception(error)
+
+    # 2. Check duplicate subject
+    can_enroll, error = check_duplicate_subject(cursor, matricula_alumno, idclaseprogramada)
+    if not can_enroll:
+        raise Exception(error)
+
+    # 3. Check concurrent prerequisites
+    can_enroll, error = check_concurrent_prerequisites(cursor, matricula_alumno, idclaseprogramada)
     if not can_enroll:
         raise Exception(error)
     
@@ -92,11 +190,25 @@ def update_inscripcion(cursor, idinscripcion, idclaseprogramada, motivo_inscripc
     # Get current enrollment info
     current = get_inscripcion(cursor, idinscripcion)
     
-    # If changing to a different class, check new class capacity
-    if current and current['idclaseprogramada'] != idclaseprogramada:
-        can_enroll, error = check_classroom_capacity(cursor, idclaseprogramada)
-        if not can_enroll:
-            raise Exception(error)
+    if current:
+        matricula_alumno = current['matricula_alumno']
+        
+        # If changing class, run validations
+        if str(current['idclaseprogramada']) != str(idclaseprogramada):
+            # 1. Capacity
+            can_enroll, error = check_classroom_capacity(cursor, idclaseprogramada)
+            if not can_enroll:
+                raise Exception(error)
+            
+            # 2. Duplicate subject (exclude current enrollment)
+            can_enroll, error = check_duplicate_subject(cursor, matricula_alumno, idclaseprogramada, exclude_inscripcion_id=idinscripcion)
+            if not can_enroll:
+                raise Exception(error)
+
+            # 3. Concurrent prerequisites
+            can_enroll, error = check_concurrent_prerequisites(cursor, matricula_alumno, idclaseprogramada, exclude_inscripcion_id=idinscripcion)
+            if not can_enroll:
+                raise Exception(error)
     
     fecha_inscripcion = date.today()
     query = """
