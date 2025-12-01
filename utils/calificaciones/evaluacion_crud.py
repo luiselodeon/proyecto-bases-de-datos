@@ -54,10 +54,13 @@ def get_clases(cursor):
     """Get list of clases programadas for dropdown"""
     query = """
     SELECT cp.idclaseprogramada,
-           CONCAT(a.nombre_asignatura, ' - ', pi.descripcion_periodo) AS descripcion
+           CONCAT(a.nombre_asignatura, ' - ', pi.descripcion_periodo, ' - ', p.nombre, ' ', p.apellido_paterno, ' (', h.dia_semana, ' ', DATE_FORMAT(h.hora_inicio, '%H:%i'), '-', DATE_FORMAT(h.hora_fin, '%H:%i'), ')') AS descripcion
     FROM claseprogramada cp
     JOIN asignatura a ON cp.idasignatura = a.idasignatura
     JOIN periodoinscripciones pi ON cp.idperiodoinscripciones = pi.idperiodoinscripciones
+    JOIN docente d ON cp.iddocente = d.iddocente
+    JOIN persona p ON d.idpersona = p.idpersona
+    JOIN horario h ON cp.idhorario = h.idhorario
     ORDER BY pi.descripcion_periodo DESC, a.nombre_asignatura
     """
     cursor.execute(query)
