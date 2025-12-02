@@ -24,6 +24,9 @@ def get_planestudio(cursor, idplanestudio):
 
 def add_planestudio(cursor, nombre_plan, vigencia_inicio, vigencia_fin, idcarrera):
     """Añade un nuevo plan de estudio"""
+    if vigencia_fin and str(vigencia_fin) < str(vigencia_inicio):
+        raise ValueError("La fecha de fin no puede ser menor a la fecha de inicio.")
+
     sql = """
     INSERT INTO planestudio (nombre_plan, vigencia_inicio, vigencia_fin, idcarrera)
     VALUES (%s, %s, %s, %s)
@@ -32,6 +35,9 @@ def add_planestudio(cursor, nombre_plan, vigencia_inicio, vigencia_fin, idcarrer
 
 def update_planestudio(cursor, idplanestudio, nombre_plan, vigencia_inicio, vigencia_fin, idcarrera):
     """Actualiza un plan de estudio existente"""
+    if vigencia_fin and str(vigencia_fin) < str(vigencia_inicio):
+        raise ValueError("La fecha de fin no puede ser menor a la fecha de inicio.")
+
     sql = """
     UPDATE planestudio
     SET nombre_plan = %s, vigencia_inicio = %s, vigencia_fin = %s, idcarrera = %s

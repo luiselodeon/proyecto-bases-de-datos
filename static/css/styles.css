@@ -1,5 +1,6 @@
 /* ========================================
    CONTROL ESCOLAR - GLOBAL STYLES
+   **Este archivo se hizo con ayuda de la inteligencia artificial**
    ======================================== */
 
 /* --- CSS Variables --- */
@@ -134,6 +135,7 @@ h3 {
 
 .card-body {
     padding: 1.5rem;
+    overflow-x: auto;
 }
 
 /* --- Table Styling --- */

@@ -53,4 +53,26 @@
     <button type="submit" class="btn btn-success">Guardar</button>
     <a href="{{ url_for('list_inscripciones') }}" class="btn btn-secondary">Cancelar</a>
 </form>
+
+<!-- Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<!-- jQuery (required for Select2) -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<!-- Select2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+    $(document).ready(function () {
+        $('#matricula_alumno').select2({
+            placeholder: "Seleccione estudiante",
+            allowClear: true,
+            width: '100%'
+        });
+        $('#idclaseprogramada').select2({
+            placeholder: "Seleccione clase programada",
+            allowClear: true,
+            width: '100%'
+        });
+    });
+</script>
 {% endblock %}
