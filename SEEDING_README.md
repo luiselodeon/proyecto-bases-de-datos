@@ -2,7 +2,7 @@
 
 ## Descripción
 
-Script de Python para poblar la base de datos con datos de prueba realistas al iniciar los contenedores de Docker.
+Script de Python para poblar la base de datos con datos de prueba realistas al iniciar los contenedores de Docker. **Este archivo se hizo con ayuda de inteligencia artificial**
 
 ## Características
 

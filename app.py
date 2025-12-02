@@ -11,10 +11,6 @@ from utils.validators import (
     validate_string, validate_date, validate_enum, validate_float, validate_int
 )
 
-
-
-
-
 # --- Importar CRUDs y conexión DB ---
 from utils.db import get_db_connection
 from utils.estudiantes import students_crud, historialacademico_crud, inscripcion_crud
@@ -209,7 +205,6 @@ def edit_student(matricula):
     else:
         flash("Estudiante no encontrado.", "warning")
         return redirect(url_for('index'))
-
 
 
 @app.route('/gestion_estudiantes/registro_consulta/delete/<int:matricula>', methods=['POST'])
@@ -447,18 +442,6 @@ def search_carreras():
 
     flash(f'Mostrando resultados para "{query_term}".', "info")
     return render_template("cursos/carrera_list.html", carreras=carreras)
-
-
-
-
-# --- Rutas para Departamento Académico ---
-
-    cursor.close()
-    conn.close()
-
-    flash(f'Mostrando resultados para "{query_term}".', "info")
-    return render_template("cursos/carrera_list.html", carreras=carreras)
-
 
 
 
@@ -1146,7 +1129,6 @@ def search_calendarios():
 
 # --- Rutas para Becas ---
 
-
 @app.route("/finanzas_becas/tipobeca")
 def list_tipobeca():
     conn = get_db_connection()
@@ -1162,9 +1144,7 @@ def add_tipobeca():
     cursor = conn.cursor(dictionary=True)
     if request.method == "POST":
 
-        # ---------------------------
         # VALIDACIÓN AUTOMÁTICA
-        # ---------------------------
         valid, error = validate_form_from_table(
             cursor,
             "tipo_beca",
@@ -1206,9 +1186,7 @@ def edit_tipobeca(idtipo):
 
     if request.method == "POST":
 
-        # ---------------------------
         # VALIDACIÓN AUTOMÁTICA
-        # ---------------------------
         valid, error = validate_form_from_table(
             cursor,
             "tipo_beca",
@@ -1441,9 +1419,7 @@ def add_departamento_asignatura():
     cursor = conn.cursor(dictionary=True)
     if request.method == "POST":
 
-        # ---------------------------
         # VALIDACIÓN AUTOMÁTICA
-        # ---------------------------
         valid, error = validate_form_from_table(
             cursor,
             "departamentoasignatura",
@@ -1487,9 +1463,7 @@ def edit_departamento_asignatura(iddep):
 
     if request.method == "POST":
 
-        # ---------------------------
         # VALIDACIÓN AUTOMÁTICA
-        # ---------------------------
         valid, error = validate_form_from_table(
             cursor,
             "departamentoasignatura",
@@ -1581,9 +1555,7 @@ def add_calificacion_estudiante():
 
     if request.method == "POST":
 
-        # ---------------------------
         # VALIDACIÓN AUTOMÁTICA
-        # ---------------------------
         valid, error = validate_form_from_table(
             cursor,
             "calificacion_estudiante",
@@ -1642,9 +1614,7 @@ def edit_calificacion_estudiante(idevaluacion, idinscripcion):
 
     if request.method == "POST":
 
-        # ---------------------------
         # VALIDACIÓN AUTOMÁTICA
-        # ---------------------------
         valid, error = validate_form_from_table(
             cursor,
             "calificacion_estudiante",
@@ -1733,7 +1703,7 @@ def search_calificacion_estudiante():
     flash(f'Mostrando resultados para "{query_term}".', "info")
     return render_template("calificaciones/calificacion_estudiante_list.html", calificaciones=calificaciones)
 
-# VOY POR AQUI CON LA VALIDACION
+
 # --- Rutas para Docente (Administración Personal) ---
 
 @app.route("/gestion_docentes/admin_personal")
@@ -1755,9 +1725,7 @@ def add_docente():
     cursor = conn.cursor(dictionary=True)
     if request.method == "POST":
 
-        # ---------------------------
         # VALIDACIÓN AUTOMÁTICA (tabla persona)
-        # ---------------------------
         valid, error = validate_form_from_table(
             cursor,
             "persona",
@@ -1778,9 +1746,6 @@ def add_docente():
         fecha_alta = request.form.get("fecha_alta") or None
         estatus = request.form.get("estatus", "A")
 
-        
-        
-        
         try:
             docente_crud.add_docente(
                 cursor, nombre, apellido_paterno, apellido_materno,
@@ -1812,9 +1777,7 @@ def edit_docente(iddocente):
 
     if request.method == "POST":
 
-        # ---------------------------
         # VALIDACIÓN AUTOMÁTICA (tabla docente)
-        # ---------------------------
         valid, error = validate_form_from_table(
             cursor,
             "docente",
@@ -1917,10 +1880,7 @@ def add_historial():
     conn = get_db_connection()
     if conn is None:
         return redirect(url_for("list_historial"))
-    cursor = conn.cursor(dictionary=True)
-
-    # Generar esquema dinámico desde la tabla
-    
+    cursor = conn.cursor(dictionary=True)    
 
     if request.method == "POST":
         form_data = {
@@ -1987,9 +1947,6 @@ def edit_historial(idhistorial):
         return redirect(url_for("list_historial"))
 
     cursor = conn.cursor(dictionary=True)
-
-    
-    
 
     if request.method == "POST":
         form_data = {
@@ -2108,8 +2065,6 @@ def add_periodo():
 
     cursor = conn.cursor(dictionary=True)
 
-    
-
     if request.method == "POST":
         form_data = {
             "descripcion": request.form.get("descripcion_periodo"),
@@ -2165,8 +2120,6 @@ def edit_periodo(idperiodo):
         return redirect(url_for("list_periodos"))
 
     cursor = conn.cursor(dictionary=True)
-
-    
 
     if request.method == "POST":
         form_data = {
@@ -2279,8 +2232,6 @@ def add_inscripcion():
         return redirect(url_for("list_inscripciones"))
     cursor = conn.cursor(dictionary=True)
 
-    
-
     if request.method == "POST":
         form_data = {
             "matricula": request.form.get("matricula_alumno"),
@@ -2345,8 +2296,6 @@ def edit_inscripcion(idinscripcion):
     if conn is None:
         return redirect(url_for("list_inscripciones"))
     cursor = conn.cursor(dictionary=True)
-
-    
 
     if request.method == "POST":
         form_data = {
@@ -2466,8 +2415,6 @@ def add_clase():
         return redirect(url_for("list_clases"))
     cursor = conn.cursor(dictionary=True)
 
-    
-
     if request.method == "POST":
         form_data = {
             "idasignatura": request.form.get("idasignatura"),
@@ -2547,8 +2494,6 @@ def edit_clase(idclase):
     if conn is None:
         return redirect(url_for("list_clases"))
     cursor = conn.cursor(dictionary=True)
-
-    
 
     if request.method == "POST":
         form_data = {
@@ -2685,8 +2630,6 @@ def add_capacitacion():
 
     cursor = conn.cursor(dictionary=True)
 
-    
-
     if request.method == "POST":
         form_data = dict(request.form)
 
@@ -2741,8 +2684,6 @@ def edit_capacitacion(idcapacitacion):
         return redirect(url_for("list_capacitaciones"))
 
     cursor = conn.cursor(dictionary=True)
-
-    
 
     if request.method == "POST":
         form_data = dict(request.form)
@@ -2934,8 +2875,6 @@ def add_prerequisito():
         return redirect(url_for("list_prerequisitos"))
 
     cursor = conn.cursor(dictionary=True)
-
-    
 
     if request.method == "POST":
         form_data = dict(request.form)
@@ -3359,8 +3298,6 @@ def add_aula():
         return redirect(url_for("list_aulas"))
     cursor = conn.cursor(dictionary=True)
 
-    
-
     if request.method == "POST":
         form_data = {
             "descripcion_aula": request.form.get("descripcion_aula"),
@@ -3413,8 +3350,6 @@ def edit_aula(idaula):
         conn.close()
         flash("Aula no encontrada.", "warning")
         return redirect(url_for("list_aulas"))
-
-    
 
     if request.method == "POST":
         form_data = {
@@ -3511,7 +3446,6 @@ def add_horario():
         return redirect(url_for("list_horarios"))
     cursor = conn.cursor(dictionary=True)
 
-
     if request.method == "POST":
         form_data = {
             "dia_semana": request.form.get("dia_semana"),
@@ -3566,8 +3500,6 @@ def edit_horario(idhorario):
         conn.close()
         flash("Horario no encontrado.", "warning")
         return redirect(url_for("list_horarios"))
-
-
 
     if request.method == "POST":
         form_data = {
@@ -3782,8 +3714,6 @@ def add_estado():
         return redirect(url_for("list_estados"))
     cursor = conn.cursor()
 
-    
-
     if request.method == "POST":
         form_data = {
             "saldo_inicial": request.form.get("saldo_inicial"),
@@ -3829,7 +3759,6 @@ def edit_estado(idestado):
     if conn is None:
         return redirect(url_for("list_estados"))
     cursor = conn.cursor(dictionary=True)
-
 
     if request.method == "POST":
         form_data = {
@@ -3930,8 +3859,6 @@ def add_usuario():
         return redirect(url_for("list_usuarios"))
     cursor = conn.cursor()
 
-    
-
     if request.method == "POST":
         form_data = {
             "email": request.form.get("email"),
@@ -3979,7 +3906,6 @@ def edit_usuario(idusuario):
     if conn is None:
         return redirect(url_for("list_usuarios"))
     cursor = conn.cursor(dictionary=True)
-
 
     usuario = usuarios_crud.get_usuario(cursor, idusuario)
     if not usuario:

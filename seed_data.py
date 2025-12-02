@@ -2,6 +2,7 @@
 """
 Database Seeding Script
 Populates the database with realistic test data
+**Este archivo se hizo con ayuda de inteligencia artificial**
 """
 
 import os
